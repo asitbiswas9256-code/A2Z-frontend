@@ -9,6 +9,7 @@ export default function RootLayout({ children }) {
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
         <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
       </head>
       <body className="bg-slate-50 text-slate-900 font-sans antialiased">
         {children}
