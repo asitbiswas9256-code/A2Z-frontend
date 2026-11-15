@@ -5,184 +5,64 @@ import {
   ShoppingBag, Truck, ShieldAlert, Package, CheckCircle2, 
   RefreshCw, Sparkles, Trash2, User, LogOut, MapPin, 
   ClipboardList, Bike, Camera, CreditCard, Banknote, 
-  Settings, Search, ServerCrash, Server, Languages, Download, X, Navigation
+  Settings, Search, ServerCrash, Server, Languages, 
+  Download, X, Star, Flame, Clock, Store, Tag, ChevronRight, Heart
 } from 'lucide-react';
 
 const API_URL = 'https://a2z-backend-tgls.onrender.com/api';
 
-// Central Store Hub Coordinates (Karimpur / Nadia Hub)
-const STORE_HUB = { lat: 23.9785, lng: 88.6142 };
+const NEARBY_STORES = [
+  { id: 's1', name: 'Biswas Agro & Grocery Hub', category: 'GENERAL', dist: '2.4 km', rating: 4.8, tag: 'Wholesale & Retail' },
+  { id: 's2', name: 'Royal Bengal Biryani & Kitchen', category: 'FOOD', dist: '1.8 km', rating: 4.7, tag: '30-Min Hot Delivery' },
+  { id: 's3', name: 'LifeCare 24×7 Medico', category: 'MEDICINE', dist: '3.1 km', rating: 4.9, tag: 'Verified Pharmacy' },
+  { id: 's4', name: 'TechZone Mobile & Gadgets', category: 'ELECTRONICS', dist: '4.5 km', rating: 4.6, tag: 'Official Warranty' }
+];
 
-const DICTIONARY = {
-  EN: {
-    subtitle: '20–30km Hyper-Local Wholesale & Retail',
-    store: 'Store',
-    orders: 'Orders',
-    admin: '+ Admin',
-    login: 'Login',
-    wholesaleActive: '📦 B2B Wholesale Rates Active',
-    retailActive: '🛍️ Standard Retail Pricing',
-    switchRetail: 'Switch to Retail',
-    switchWholesale: 'Switch to Wholesale',
-    searchPlaceholder: 'Search groceries, food, medicine, charger...',
-    sortNewest: 'Sort: Newest First',
-    sortLow: 'Price: Low to High',
-    sortHigh: 'Price: High to Low',
-    catAll: 'All Items',
-    catGeneral: 'GENERAL (Grocery)',
-    catFood: 'FOOD',
-    catMedicine: 'MEDICINE',
-    catElectronics: 'ELECTRONICS',
-    wakingUp: 'Waking up Render server (~30s)... Showing saved items',
-    offline: 'Server sleeping or offline — Tap refresh',
-    fastDelivery: '20–30km Fast Delivery',
-    minOrder: 'Min Order:',
-    units: 'units',
-    addBtn: '+ Add',
-    rxRequired: 'Rx Required',
-    noProductsTitle: 'No Matching Products Found',
-    noProductsSub: 'Try clearing your search or add a sample product below.',
-    addSampleBtn: 'Add 1-Tap Sample Product',
-    smartCart: 'Smart Cart',
-    items: 'items',
-    total: 'Total',
-    splitFleetTitle: 'Split Fleet Dispatch:',
-    splitFleetDesc: 'Hot Food arrives in 35 mins via Immediate Rider. Wholesale/General items arrive via 20–30km Utility Fleet.',
-    rxMandatory: '🩺 Doctor Prescription Required for Medicine *',
-    uploadRx: 'Upload Rx Photo',
-    rxPlaceholder: 'Or enter Doctor Rx ID...',
-    addressLabel: '📍 Delivery Address & GPS Location (20–30km Zone) *',
-    addressPlaceholder: 'Enter village/town, landmark, and pin code...',
-    detectGps: 'Detect My GPS Location',
-    gpsSuccess: 'GPS Verified! Distance from store:',
-    gpsOutRange: '❌ Sorry! You are outside our 30km delivery zone.',
-    paymentLabel: '💳 Select Payment Method',
-    payRazorpay: 'Razorpay (UPI/Card)',
-    payCod: 'Cash on Delivery',
-    checkoutRazorpay: 'Pay via Razorpay & Order',
-    checkoutCod: 'Place COD Order',
-    installTitle: 'Install A2Z Super App on your Phone',
-    installSub: 'Fast 1-tap access, full-screen Android experience & offline catalog',
-    installBtn: 'Install App',
-    installGuide: 'To install on Android: Tap Chrome menu (⋮) in top right ➔ Tap "Add to Home screen" or "Install app".',
-    liveOrdersTitle: 'Live Orders & Fleet Dispatch',
-    refresh: 'Refresh',
-    noOrders: 'No orders placed yet.',
-    adminTitle: 'Add New Product (Admin)',
-    keysBtn: 'Keys',
-    sampleBtn: '+ Sample Item',
-    prodNamePlaceholder: 'Product Name (e.g., Fortune Mustard Oil 1L) *',
-    takePhoto: 'Take / Upload Photo',
-    pasteUrlPlaceholder: 'Or paste image URL...',
-    stockPlaceholder: 'Stock Qty',
-    retailPricePlaceholder: 'Retail Price (₹) *',
-    wholesalePricePlaceholder: 'Wholesale Price (₹)',
-    rxCheckbox: 'Requires Doctor Prescription (Rx Mandatory)',
-    saveProductBtn: 'Save Product to Database',
-    demoLoginTitle: '1-Tap Instant Demo Login (Saves to MongoDB):',
-    roleCustomer: '🛍️ Retail Customer',
-    roleWholesale: '📦 Wholesale Buyer (B2B)',
-    roleRider: '🛵 Delivery Rider',
-    loginTab: 'Login',
-    registerTab: 'Register',
-    goStore: 'Go to Storefront',
-    viewOrders: 'View Live Orders',
-    logout: 'Logout'
+const PROMO_BANNERS = [
+  {
+    id: 'b1',
+    badge: 'MEGA WHOLESALE & RETAIL FEST',
+    title: 'Up to 25% OFF on Bulk Grocery & Kirana Supplies',
+    sub: 'Direct 20–30km utility fleet dispatch for shops & families',
+    code: 'A2ZBULK',
+    bg: 'from-indigo-800 via-indigo-700 to-purple-800'
   },
-  BN: {
-    subtitle: '২০–৩০ কিমি হাইপার-লোকাল হোলসেল ও রিটেল ডেলিভারি',
-    store: 'দোকান',
-    orders: 'অর্ডার',
-    admin: '+ অ্যাডমিন',
-    login: 'লগইন',
-    wholesaleActive: '📦 পাইকারি (B2B) রেট চালু আছে',
-    retailActive: '🛍️ খুচরো (Retail) দাম চালু আছে',
-    switchRetail: 'খুচরো রেট দেখুন',
-    switchWholesale: 'পাইকারি রেট দেখুন',
-    searchPlaceholder: 'মুদিখানা, খাবার, ওষুধ বা চার্জার খুঁজুন...',
-    sortNewest: 'সাজান: নতুন পণ্য আগে',
-    sortLow: 'দাম: কম থেকে বেশি',
-    sortHigh: 'দাম: বেশি থেকে কম',
-    catAll: 'সব পণ্য',
-    catGeneral: 'মুদিখানা (General)',
-    catFood: 'খাবার (Food)',
-    catMedicine: 'ওষুধ (Medicine)',
-    catElectronics: 'ইলেকট্রনিক্স',
-    wakingUp: 'সার্ভার চালু হচ্ছে (~৩০ সেকেন্ড)... সংরক্ষিত পণ্য দেখানো হচ্ছে',
-    offline: 'সার্ভার অফলাইন — রিফ্রেশ করুন',
-    fastDelivery: '২০–৩০ কিমি দ্রুত ডেলিভারি',
-    minOrder: 'ন্যূনতম অর্ডার:',
-    units: 'টি',
-    addBtn: '+ যোগ করুন',
-    rxRequired: 'প্রেসক্রিপশন জরুরি',
-    noProductsTitle: 'কোনো পণ্য পাওয়া যায়নি',
-    noProductsSub: 'অন্য কিছু খুঁজুন অথবা নিচের বাটনে ট্যাপ করে ডেমো পণ্য যোগ করুন।',
-    addSampleBtn: '১-ট্যাপে ডেমো পণ্য যোগ করুন',
-    smartCart: 'স্মার্ট কার্ট',
-    items: 'টি পণ্য',
-    total: 'মোট',
-    splitFleetTitle: 'স্প্লিট ফ্লিট ডেলিভারি:',
-    splitFleetDesc: 'গরম খাবার ৩৫ মিনিটে পৌঁছাবে এবং পাইকারি/মুদিখানা পণ্য ২০–৩০ কিমি ইউটিলিটি ভ্যানে পৌঁছাবে।',
-    rxMandatory: '🩺 ওষুধের জন্য ডাক্তারের প্রেসক্রিপশন আবশ্যক *',
-    uploadRx: 'প্রেসক্রিপশন ছবি তুলুন',
-    rxPlaceholder: 'অথবা প্রেসক্রিপশন আইডি লিখুন...',
-    addressLabel: '📍 ডেলিভারি ঠিকানা ও জিপিএস লোকেশন (২০–৩০ কিমি এলাকা) *',
-    addressPlaceholder: 'গ্রাম/শহর, ল্যান্ডমার্ক এবং পিন কোড লিখুন...',
-    detectGps: 'আমার জিপিএস লোকেশন নিন',
-    gpsSuccess: 'জিপিএস ভেরিফাই হয়েছে! দোকান থেকে দূরত্ব:',
-    gpsOutRange: '❌ দুঃখিত! আপনি আমাদের ৩০ কিমি ডেলিভারি সীমার বাইরে আছেন।',
-    paymentLabel: '💳 পেমেন্ট পদ্ধতি বেছে নিন',
-    payRazorpay: 'অনলাইন পেমেন্ট (UPI/Card)',
-    payCod: 'ক্যাশ অন ডেলিভারি (COD)',
-    checkoutRazorpay: 'অনলাইনে পেমেন্ট ও অর্ডার করুন',
-    checkoutCod: 'ক্যাশ অন ডেলিভারি অর্ডার করুন',
-    installTitle: 'ফোনে A2Z Super App ইনস্টল করুন',
-    installSub: 'হোম স্ক্রিন থেকে ১-ট্যাপে দ্রুত শপিং এবং ফুল-স্ক্রিন অ্যান্ড্রয়েড অ্যাপ',
-    installBtn: 'অ্যাপ ইনস্টল করুন',
-    installGuide: 'ইনস্টল করতে: ব্রাউজারের উপরে ডানদিকে (⋮) মেনুতে ট্যাপ করে "Add to Home screen" বা "Install app" বেছে নিন।',
-    liveOrdersTitle: 'লাইভ অর্ডার ও ডেলিভারি ট্র্যাকিং',
-    refresh: 'রিফ্রেশ',
-    noOrders: 'এখনো কোনো অর্ডার করা হয়নি।',
-    adminTitle: 'নতুন পণ্য যোগ করুন (অ্যাডমিন)',
-    keysBtn: 'ক্লাউড কী (Keys)',
-    sampleBtn: '+ ডেমো পণ্য',
-    prodNamePlaceholder: 'পণ্যের নাম (যেমন: ফরচুন সরিষার তেল ১ লিটার) *',
-    takePhoto: 'ছবি তুলুন / আপলোড করুন',
-    pasteUrlPlaceholder: 'অথবা ছবির লিঙ্ক পেস্ট করুন...',
-    stockPlaceholder: 'স্টক সংখ্যা',
-    retailPricePlaceholder: 'খুচরো দাম (₹) *',
-    wholesalePricePlaceholder: 'পাইকারি দাম (₹)',
-    rxCheckbox: 'ডাক্তারের প্রেসক্রিপশন বাধ্যতামূলক (Rx)',
-    saveProductBtn: 'ডাটাবেসে পণ্য সেভ করুন',
-    demoLoginTitle: '১-ট্যাপে ডেমো লগইন (MongoDB-তে সেভ হবে):',
-    roleCustomer: '🛍️ খুচরো গ্রাহক (Retail)',
-    roleWholesale: '📦 পাইকারি ক্রেতা (B2B)',
-    roleRider: '🛵 ডেলিভারি রাইডার',
-    loginTab: 'লগইন',
-    registerTab: 'নতুন অ্যাকাউন্ট',
-    goStore: 'দোকানে ফিরে যান',
-    viewOrders: 'লাইভ অর্ডার দেখুন',
-    logout: 'লগআউট'
+  {
+    id: 'b2',
+    badge: 'ZOMATO-STYLE EXPRESS FOOD',
+    title: 'Hot Biryani, Rolls & Combos in 35 Mins',
+    sub: 'Zero surge fee within local zone • Split-fleet checkout supported',
+    code: 'HOTFOOD50',
+    bg: 'from-rose-700 via-red-600 to-amber-600'
   }
-};
+];
 
 export default function SuperAppHome() {
   const [viewMode, setViewMode] = useState('STORE');
   const [activeTab, setActiveTab] = useState('ALL');
+  const [selectedStoreFilter, setSelectedStoreFilter] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
   const [lang, setLang] = useState('EN');
 
-  // PWA & GPS States
+  // Search, Auto-Suggestions & Sorting
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [sortOption, setSortOption] = useState('NEWEST');
+  const [serverStatus, setServerStatus] = useState('IDLE');
+
+  // Product Detail Modal & Recently Viewed
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedVariant, setSelectedVariant] = useState('');
+  const [detailQty, setDetailQty] = useState(1);
+  const [zoomImg, setZoomImg] = useState(false);
+  const [reviewInput, setReviewInput] = useState({ rating: 5, comment: '' });
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [wishlist, setWishlist] = useState([]);
+
+  // PWA Install States
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallBanner, setShowInstallBanner] = useState(true);
   const [isStandalone, setIsStandalone] = useState(false);
-  const [userLocation, setUserLocation] = useState(null); // { lat, lng, distanceKm }
-  const [locatingGps, setLocatingGps] = useState(false);
-
-  // Search, Sort & Server Wake-Up States
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortOption, setSortOption] = useState('NEWEST');
-  const [serverStatus, setServerStatus] = useState('IDLE');
 
   // Data States
   const [products, setProducts] = useState([]);
@@ -209,77 +89,77 @@ export default function SuperAppHome() {
   // Cart & Checkout States
   const [isWholesale, setIsWholesale] = useState(false);
   const [cart, setCart] = useState([]);
+  const [couponCode, setCouponCode] = useState('');
+  const [discountAmount, setDiscountAmount] = useState(0);
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [prescriptionUrl, setPrescriptionUrl] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('RAZORPAY');
 
   // Admin Form State
   const [formData, setFormData] = useState({
-    name: '', category: 'GENERAL', price: '', wholesalePrice: '',
-    minWholesaleQty: '10', stock: '100', requiresPrescription: false, imageUrl: ''
+    name: '',
+    brand: '',
+    shopName: 'Biswas Agro & Grocery Hub',
+    category: 'GENERAL',
+    price: '',
+    wholesalePrice: '',
+    minWholesaleQty: '5',
+    stock: '100',
+    variantsText: 'Regular, Large Pack',
+    description: '',
+    specifications: '',
+    requiresPrescription: false,
+    imageUrl: ''
   });
 
-  const t = DICTIONARY[lang];
-
-  // Haversine formula to calculate distance in KM between two lat/lng points
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Radius of the earth in km
-    const dLat = (lat2 - lat1) * (Math.PI / 180);
-    const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // Distance in km
-  };
-
-  const handleDetectGPS = () => {
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser');
-      return;
+  const t = {
+    EN: {
+      subtitle: '20–30km Hyper-Local Wholesale & Retail Super App',
+      store: 'Store',
+      orders: 'Orders',
+      admin: '+ Admin',
+      login: 'Login',
+      wholesaleActive: '📦 B2B Wholesale Tiered Pricing Active',
+      retailActive: '🛍️ Standard Retail Mode',
+      switchRetail: 'Switch to Retail',
+      switchWholesale: 'Switch to Wholesale',
+      searchPlaceholder: 'Search products, brands, stores or categories...',
+      nearbyStores: 'Popular Nearby Stores (20–30km)',
+      trendingTitle: 'Trending & Recommended',
+      recentlyViewedTitle: 'Recently Viewed Products',
+      allProductsTitle: 'Explore Catalogue',
+      clearFilter: 'Show All Stores'
+    },
+    BN: {
+      subtitle: '২০–৩০ কিমি হাইপার-লোকাল হোলসেল ও রিটেল সুপার অ্যাপ',
+      store: 'দোকান',
+      orders: 'অর্ডার',
+      admin: '+ অ্যাডমিন',
+      login: 'লগইন',
+      wholesaleActive: '📦 পাইকারি (B2B) রেট চালু আছে',
+      retailActive: '🛍️ খুচরো (Retail) দাম চালু আছে',
+      switchRetail: 'খুচরো রেট দেখুন',
+      switchWholesale: 'পাইকারি রেট দেখুন',
+      searchPlaceholder: 'পণ্য, ব্র্যান্ড, দোকান বা ক্যাটাগরি খুঁজুন...',
+      nearbyStores: 'কাছাকাছি জনপ্রিয় দোকান (২০–৩০ কিমি)',
+      trendingTitle: 'ট্রেন্ডিং ও সেরা পণ্য',
+      recentlyViewedTitle: 'সম্প্রতি দেখা পণ্য',
+      allProductsTitle: 'সমস্ত পণ্যের তালিকা',
+      clearFilter: 'সব দোকান দেখুন'
     }
-    setLocatingGps(true);
-    setStatusMsg('🛰️ Fetching your GPS coordinates...');
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        const dist = calculateDistance(STORE_HUB.lat, STORE_HUB.lng, lat, lng);
-        const roundedDist = Math.round(dist * 10) / 10;
-
-        setUserLocation({ lat, lng, distanceKm: roundedDist });
-        setLocatingGps(false);
-
-        if (roundedDist > 30) {
-          setStatusMsg(`❌ ${t.gpsOutRange} (${roundedDist} km away)`);
-        } else {
-          setStatusMsg(`✅ ${t.gpsSuccess} ${roundedDist} km`);
-        }
-      },
-      (error) => {
-        setLocatingGps(false);
-        setStatusMsg('❌ Unable to retrieve your GPS location. Please type address manually.');
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  };
+  }[lang];
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch((err) => console.error('SW Error:', err));
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
       }
-
       if (window.matchMedia('(display-mode: standalone)').matches) {
         setIsStandalone(true);
       }
-
       const handleBeforeInstallPrompt = (e) => {
         e.preventDefault();
         setDeferredPrompt(e);
-        setShowInstallBanner(true);
       };
       window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
@@ -306,11 +186,12 @@ export default function SuperAppHome() {
           }
         }
 
+        const savedRecent = localStorage.getItem('a2z_recent_products');
+        if (savedRecent) setRecentlyViewed(JSON.parse(savedRecent));
+
         const savedCart = localStorage.getItem('a2z_cart_cache');
         if (savedCart) setCart(JSON.parse(savedCart));
-      } catch (e) {
-        console.error(e);
-      }
+      } catch (e) {}
 
       fetchProducts();
       fetchOrders();
@@ -328,33 +209,12 @@ export default function SuperAppHome() {
   const toggleLanguage = () => {
     const nextLang = lang === 'EN' ? 'BN' : 'EN';
     setLang(nextLang);
-    try {
-      localStorage.setItem('a2z_lang', nextLang);
-    } catch (e) {}
-  };
-
-  const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') setShowInstallBanner(false);
-      setDeferredPrompt(null);
-    } else {
-      alert(t.installGuide);
-    }
-  };
-
-  const saveCloudKeys = (e) => {
-    e.preventDefault();
-    localStorage.setItem('a2z_cloud_keys', JSON.stringify(cloudConfig));
-    setShowKeySettings(false);
-    setStatusMsg('✅ Cloud keys saved on this phone!');
+    try { localStorage.setItem('a2z_lang', nextLang); } catch (e) {}
   };
 
   const fetchProducts = async () => {
     if (products.length === 0) setLoading(true);
     const wakeTimer = setTimeout(() => setServerStatus('WAKING_UP'), 1500);
-
     try {
       const res = await fetch(`${API_URL}/products`);
       clearTimeout(wakeTimer);
@@ -378,11 +238,109 @@ export default function SuperAppHome() {
       const res = await fetch(`${API_URL}/orders`);
       const data = await res.json();
       if (Array.isArray(data)) setOrders(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
+    } catch (err) {} finally {
       setOrdersLoading(false);
     }
+  };
+
+  // Open Advanced Product Detail Modal & Track Recently Viewed
+  const openProductModal = (product) => {
+    const variantsList = Array.isArray(product.variants) && product.variants.length > 0
+      ? product.variants
+      : ['Standard Pack', 'Family / Bulk Pack'];
+    setSelectedProduct(product);
+    setSelectedVariant(variantsList[0]);
+    setDetailQty(isWholesale ? (product.minWholesaleQty || 5) : 1);
+    setZoomImg(false);
+
+    setRecentlyViewed((prev) => {
+      const filtered = prev.filter((item) => item._id !== product._id);
+      const updated = [product, ...filtered].slice(0, 6);
+      try { localStorage.setItem('a2z_recent_products', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+  };
+
+  // Dynamic Tiered Wholesale Slab Calculator
+  const calculateUnitPrice = (product, qty) => {
+    const retail = Number(product.price || 100);
+    const baseWholesale = Number(product.wholesalePrice || Math.round(retail * 0.85));
+    const minMoq = Number(product.minWholesaleQty || 5);
+
+    if (!isWholesale && qty < minMoq) return retail;
+    if (qty >= 50) return Math.round(baseWholesale * 0.88); // 50+ Bulk Distributor Slab
+    if (qty >= 20) return Math.round(baseWholesale * 0.94); // 20-49 Mid-Wholesale Slab
+    if (qty >= minMoq || isWholesale) return baseWholesale; // 5-19 Standard B2B Slab
+    return retail;
+  };
+
+  const addToCart = (product, customQty, chosenVariant) => {
+    const qtyToAdd = customQty || (isWholesale ? (product.minWholesaleQty || 5) : 1);
+    const unitPrice = calculateUnitPrice(product, qtyToAdd);
+    const variantLabel = chosenVariant || (product.variants?.[0] || 'Standard');
+
+    setCart((prev) => [
+      ...prev,
+      {
+        ...product,
+        qty: qtyToAdd,
+        finalPrice: unitPrice,
+        selectedVariant: variantLabel
+      }
+    ]);
+    setStatusMsg(`🛒 Added ${product.name} (${variantLabel} × ${qtyToAdd}) @ ₹${unitPrice}/unit`);
+    if (selectedProduct) setSelectedProduct(null);
+  };
+
+  const updateCartQty = (idx, delta) => {
+    setCart((prev) =>
+      prev
+        .map((item, i) => {
+          if (i !== idx) return item;
+          const nextQty = item.qty + delta;
+          if (nextQty <= 0) return null;
+          return {
+            ...item,
+            qty: nextQty,
+            finalPrice: calculateUnitPrice(item, nextQty)
+          };
+        })
+        .filter(Boolean)
+    );
+  };
+
+  const applyCoupon = (codeToApply) => {
+    const code = (codeToApply || couponCode).trim().toUpperCase();
+    setCouponCode(code);
+    if (code === 'A2ZBULK' || code === 'HOTFOOD50') {
+      setDiscountAmount(50);
+      setStatusMsg(`🎉 Coupon ${code} applied! ₹50 instant discount added.`);
+    } else {
+      setDiscountAmount(0);
+      setStatusMsg('⚠️ Invalid coupon. Try A2ZBULK or HOTFOOD50');
+    }
+  };
+
+  // Add Customer Review Inside Product Modal
+  const handleAddReview = (e) => {
+    e.preventDefault();
+    if (!reviewInput.comment.trim() || !selectedProduct) return;
+    const newReview = {
+      userName: currentUser ? currentUser.name : 'Verified Local Shopper',
+      rating: Number(reviewInput.rating),
+      comment: reviewInput.comment,
+      date: 'Just now'
+    };
+    const updatedReviews = [newReview, ...(selectedProduct.reviews || [])];
+    const updatedProduct = {
+      ...selectedProduct,
+      reviews: updatedReviews,
+      reviewsCount: (selectedProduct.reviewsCount || 24) + 1
+    };
+    setSelectedProduct(updatedProduct);
+    setProducts((prev) => prev.map((p) => (p._id === updatedProduct._id ? updatedProduct : p)));
+    setReviewInput({ rating: 5, comment: '' });
+    setStatusMsg('⭐ Thank you! Your review has been posted.');
   };
 
   const handleFileUpload = async (file, targetType) => {
@@ -400,7 +358,7 @@ export default function SuperAppHome() {
           { method: 'POST', body: formPayload }
         );
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error?.message || 'Upload failed');
+        if (!res.ok) throw new Error('Upload failed');
         finalImageUrl = data.secure_url;
       } else {
         finalImageUrl = await new Promise((resolve, reject) => {
@@ -424,241 +382,91 @@ export default function SuperAppHome() {
           reader.onerror = reject;
         });
       }
-
       if (targetType === 'PRODUCT') {
         setFormData((prev) => ({ ...prev, imageUrl: finalImageUrl }));
-        setStatusMsg('✅ Product photo ready!');
       } else {
         setPrescriptionUrl(finalImageUrl);
-        setStatusMsg('✅ Prescription photo attached!');
       }
+      setStatusMsg('✅ Photo attached!');
     } catch (err) {
-      setStatusMsg(`❌ Upload Error: ${err.message}`);
+      setStatusMsg(`❌ ${err.message}`);
     } finally {
       setUploadingImg(false);
     }
   };
 
-  const handleAuthSubmit = async (e) => {
-    e.preventDefault();
-    setStatusMsg(authMode === 'LOGIN' ? 'Logging in...' : 'Registering...');
-    try {
-      const endpoint = authMode === 'LOGIN' ? '/users/login' : '/users/register';
-      const payload = authMode === 'LOGIN'
-        ? { email: authForm.email, password: authForm.password }
-        : authForm;
-
-      const res = await fetch(`${API_URL}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Authentication failed');
-
-      const userObj = data.user || {
-        id: data._id, name: data.name, email: data.email,
-        phone: data.phone, role: data.role, gstNumber: data.gstNumber
-      };
-      setCurrentUser(userObj);
-      localStorage.setItem('a2z_user', JSON.stringify(userObj));
-      setIsWholesale(userObj.role === 'WHOLESALE_BUYER');
-      setViewMode(userObj.role === 'DELIVERY_PARTNER' ? 'ORDERS' : 'STORE');
-      setStatusMsg(`✅ Welcome, ${userObj.name}!`);
-    } catch (err) {
-      setStatusMsg(`❌ ${err.message}`);
-    }
-  };
-
-  const handleQuickDemoAuth = async (demoType) => {
-    const profiles = {
-      CUSTOMER: { name: 'Rahul Sharma (Retail)', email: 'retail@a2zdemo.com', password: 'password123', phone: '9876543210', role: 'CUSTOMER' },
-      WHOLESALE_BUYER: { name: 'Biswas Kirana Store (B2B)', email: 'wholesale@a2zdemo.com', password: 'password123', phone: '9876500001', role: 'WHOLESALE_BUYER', gstNumber: '19ABCDE1234F1Z5' },
-      DELIVERY_PARTNER: { name: 'Suman Rider (20-30km Fleet)', email: 'rider@a2zdemo.com', password: 'password123', phone: '9876599999', role: 'DELIVERY_PARTNER' }
-    };
-    const profile = profiles[demoType];
-    setStatusMsg(`Connecting as ${profile.name}...`);
-
-    try {
-      let res = await fetch(`${API_URL}/users/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: profile.email, password: profile.password })
-      });
-      if (!res.ok) {
-        res = await fetch(`${API_URL}/users/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(profile)
-        });
-      }
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Demo login failed');
-
-      const userObj = data.user || {
-        id: data._id, name: data.name, email: data.email,
-        phone: data.phone, role: data.role, gstNumber: data.gstNumber
-      };
-      setCurrentUser(userObj);
-      localStorage.setItem('a2z_user', JSON.stringify(userObj));
-      setIsWholesale(userObj.role === 'WHOLESALE_BUYER');
-      setStatusMsg(`✅ Logged in as ${userObj.name}`);
-      setViewMode(userObj.role === 'DELIVERY_PARTNER' ? 'ORDERS' : 'STORE');
-    } catch (err) {
-      setStatusMsg(`❌ ${err.message}`);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('a2z_user');
-    setCurrentUser(null);
-    setIsWholesale(false);
-    setStatusMsg('Logged out.');
-  };
-
-  const saveOrderToDatabase = async (paymentLabel) => {
-    setStatusMsg('Saving order to MongoDB...');
-    try {
-      const orderPayload = {
-        customer: currentUser.id || currentUser._id,
-        items: cart.map((item) => ({
-          product: item._id,
-          quantity: item.qty,
-          price: item.finalPrice
-        })),
-        totalAmount: cartTotal,
-        deliveryAddress: `${deliveryAddress} [GPS: ${userLocation ? userLocation.distanceKm + 'km' : 'Manual'} | ${paymentLabel}]`,
-        prescriptionUrl: prescriptionUrl || undefined,
-        deliveryType: hasFood && hasNonFood ? 'SPLIT_FLEET' : hasFood ? 'IMMEDIATE_FOOD' : 'STANDARD_20_30KM',
-        status: 'PENDING'
-      };
-
-      const res = await fetch(`${API_URL}/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderPayload)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Order failed');
-
-      setCart([]);
-      localStorage.removeItem('a2z_cart_cache');
-      setPrescriptionUrl('');
-      setStatusMsg(`🎉 Order Placed (${paymentLabel})!`);
-      fetchOrders();
-      setViewMode('ORDERS');
-    } catch (err) {
-      setStatusMsg(`❌ Order Error: ${err.message}`);
-    }
-  };
-
-  const handlePlaceOrder = async () => {
-    if (!currentUser) {
-      setStatusMsg('⚠️ Please login or tap a 1-Tap Demo Account first!');
-      setViewMode('ACCOUNT');
-      return;
-    }
-    if (needsRx && !prescriptionUrl.trim()) {
-      alert('Prescription photo or Rx ID is required for restricted medicines!');
-      return;
-    }
-    if (!deliveryAddress.trim()) {
-      alert('Please enter your delivery address!');
-      return;
-    }
-    if (userLocation && userLocation.distanceKm > 30) {
-      alert('Cannot checkout: You are outside the 30km hyper-local delivery radius!');
-      return;
-    }
-
-    if (paymentMethod === 'COD') {
-      await saveOrderToDatabase('COD - Pay on Delivery');
-      return;
-    }
-
-    if (cloudConfig.razorpayKeyId && typeof window !== 'undefined' && window.Razorpay) {
-      const options = {
-        key: cloudConfig.razorpayKeyId,
-        amount: cartTotal * 100,
-        currency: 'INR',
-        name: 'A2Z Super App',
-        description: '20-30km Hyper-Local Order',
-        handler: async function (response) {
-          await saveOrderToDatabase(`PAID via Razorpay (${response.razorpay_payment_id})`);
-        },
-        prefill: {
-          name: currentUser.name,
-          email: currentUser.email,
-          contact: currentUser.phone || '9876543210'
-        },
-        theme: { color: '#4338ca' }
-      };
-      new window.Razorpay(options).open();
-    } else {
-      const demoPayId = 'pay_A2Z' + Math.floor(100000 + Math.random() * 900000);
-      await saveOrderToDatabase(`PAID Online (${demoPayId})`);
-    }
-  };
-
-  const handleUpdateOrderStatus = async (orderId, newStatus) => {
-    setStatusMsg(`Updating order to ${newStatus}...`);
-    try {
-      const payload = { status: newStatus };
-      if (currentUser?.role === 'DELIVERY_PARTNER') {
-        payload.deliveryPartner = currentUser.id || currentUser._id;
-      }
-      const res = await fetch(`${API_URL}/orders/${orderId}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error('Update failed');
-      setStatusMsg(`✅ Order marked as ${newStatus}!`);
-      fetchOrders();
-    } catch (err) {
-      setStatusMsg(`❌ ${err.message}`);
-    }
-  };
-
-  const handleAddProduct = async (e) => {
-    e.preventDefault();
-    setStatusMsg('Saving product to MongoDB...');
-    try {
-      const payload = {
-        name: formData.name,
-        category: formData.category,
-        price: Number(formData.price),
-        wholesalePrice: Number(formData.wholesalePrice || formData.price),
-        minWholesaleQty: Number(formData.minWholesaleQty || 10),
-        stock: Number(formData.stock || 50),
-        requiresPrescription: formData.requiresPrescription,
-        imageUrl: formData.imageUrl
-      };
-      const res = await fetch(`${API_URL}/products`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error('Failed to save product');
-      setStatusMsg('✅ Product saved!');
-      setFormData({
-        name: '', category: 'GENERAL', price: '', wholesalePrice: '',
-        minWholesaleQty: '10', stock: '100', requiresPrescription: false, imageUrl: ''
-      });
-      fetchProducts();
-      setViewMode('STORE');
-    } catch (err) {
-      setStatusMsg(`❌ ${err.message}`);
-    }
-  };
-
+  // Rich Sample Catalogue Seeder
   const handleQuickDemoProduct = async () => {
-    setStatusMsg('Adding sample product...');
+    setStatusMsg('Adding rich sample product to MongoDB...');
     const samples = [
-      { name: 'Aashirvaad Select Atta (10kg)', category: 'GENERAL', price: 460, wholesalePrice: 410, minWholesaleQty: 5, stock: 80, requiresPrescription: false, imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=500&q=80' },
-      { name: 'Hyderabadi Chicken Biryani Pack', category: 'FOOD', price: 320, wholesalePrice: 280, minWholesaleQty: 5, stock: 30, requiresPrescription: false, imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=500&q=80' },
-      { name: 'Augmentin 625 Duo Tablet Strip', category: 'MEDICINE', price: 200, wholesalePrice: 165, minWholesaleQty: 10, stock: 120, requiresPrescription: true, imageUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=500&q=80' },
-      { name: 'SuperVOOC 65W Type-C Fast Charger', category: 'ELECTRONICS', price: 799, wholesalePrice: 550, minWholesaleQty: 10, stock: 45, requiresPrescription: false, imageUrl: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=500&q=80' }
+      {
+        name: 'Aashirvaad Select Sharbati Atta',
+        brand: 'ITC Aashirvaad',
+        shopName: 'Biswas Agro & Grocery Hub',
+        category: 'GENERAL',
+        price: 460,
+        wholesalePrice: 410,
+        minWholesaleQty: 5,
+        stock: 90,
+        variants: ['5kg Pack', '10kg Family Pack', '25kg Wholesale Sack'],
+        description: '100% MP Sharbati wheat flour for soft rotis. Fresh stock available for retail & kirana wholesale.',
+        specifications: 'Shelf Life: 4 Months • FSSAI Certified • Moisture Proof Packaging',
+        rating: 4.8,
+        reviewsCount: 64,
+        requiresPrescription: false,
+        imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=600&q=80'
+      },
+      {
+        name: 'Special Royal Chicken Dum Biryani',
+        brand: 'Royal Bengal Kitchen',
+        shopName: 'Royal Bengal Biryani & Kitchen',
+        category: 'FOOD',
+        price: 240,
+        wholesalePrice: 195,
+        minWholesaleQty: 5,
+        stock: 40,
+        variants: ['Regular Plate (1 Pc)', 'Special Combo (2 Pcs + Egg)', 'Family Bucket (4 Serves)'],
+        description: 'Authentic Kolkata-style fragrant basmati Dum Biryani with tender chicken, potato, boiled egg, and raita.',
+        specifications: 'Prep Time: 20 Mins • Hygienic Sealed Handi • 100% Halal',
+        rating: 4.9,
+        reviewsCount: 112,
+        requiresPrescription: false,
+        imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80'
+      },
+      {
+        name: 'Augmentin 625 Duo Tablet Strip (10 Tabs)',
+        brand: 'GSK Pharma',
+        shopName: 'LifeCare 24×7 Medico',
+        category: 'MEDICINE',
+        price: 204,
+        wholesalePrice: 168,
+        minWholesaleQty: 10,
+        stock: 150,
+        variants: ['1 Strip (10 Tablets)', 'Box of 10 Strips (Pharmacy Pack)'],
+        description: 'Broad-spectrum antibiotic composed of Amoxycillin and Potassium Clavulanate. Verified pharmacy dispatch.',
+        specifications: 'Cold-Chain Protected • Batch Verified • Rx Mandatory',
+        rating: 4.9,
+        reviewsCount: 48,
+        requiresPrescription: true,
+        imageUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80'
+      },
+      {
+        name: 'SuperVOOC 65W Type-C Fast Charger Adapter',
+        brand: 'TechZone Official',
+        shopName: 'TechZone Mobile & Gadgets',
+        category: 'ELECTRONICS',
+        price: 799,
+        wholesalePrice: 540,
+        minWholesaleQty: 5,
+        stock: 55,
+        variants: ['Adapter Only', 'Adapter + 1m Type-C Cable', 'Retailer 5-Pack Box'],
+        description: 'High-speed 65W GaN fast charger compatible with 5G smartphones, tablets, and USB-C devices.',
+        specifications: 'Output: 65W Max • Over-Voltage Protection • 6 Months Replacement Warranty',
+        rating: 4.7,
+        reviewsCount: 39,
+        requiresPrescription: false,
+        imageUrl: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=600&q=80'
+      }
     ];
     const randomItem = samples[Math.floor(Math.random() * samples.length)];
     try {
@@ -676,23 +484,205 @@ export default function SuperAppHome() {
     }
   };
 
-  const addToCart = (product) => {
-    const qtyToAdd = isWholesale ? (product.minWholesaleQty || 5) : 1;
-    const unitPrice = isWholesale && product.wholesalePrice ? product.wholesalePrice : product.price;
-    setCart((prev) => [...prev, { ...product, qty: qtyToAdd, finalPrice: unitPrice }]);
-    setStatusMsg(`🛒 Added ${product.name} (×${qtyToAdd})`);
+  const handleAddProduct = async (e) => {
+    e.preventDefault();
+    setStatusMsg('Saving product to MongoDB...');
+    try {
+      const variantsArr = formData.variantsText
+        ? formData.variantsText.split(',').map((s) => s.trim()).filter(Boolean)
+        : ['Standard'];
+      const payload = {
+        name: formData.name,
+        brand: formData.brand || 'A2Z Verified',
+        shopName: formData.shopName || 'A2Z Central Hub',
+        category: formData.category,
+        price: Number(formData.price),
+        wholesalePrice: Number(formData.wholesalePrice || formData.price),
+        minWholesaleQty: Number(formData.minWholesaleQty || 5),
+        stock: Number(formData.stock || 50),
+        variants: variantsArr,
+        description: formData.description || 'Quality verified local product.',
+        specifications: formData.specifications || 'Fast 20–30km delivery • GST Invoice Available',
+        requiresPrescription: formData.requiresPrescription,
+        imageUrl: formData.imageUrl
+      };
+      const res = await fetch(`${API_URL}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('Failed to save product');
+      setStatusMsg('✅ Product saved to MongoDB!');
+      fetchProducts();
+      setViewMode('STORE');
+    } catch (err) {
+      setStatusMsg(`❌ ${err.message}`);
+    }
   };
 
-  const removeFromCart = (index) => {
-    setCart((prev) => prev.filter((_, i) => i !== index));
+  const handleQuickDemoAuth = async (demoType) => {
+    const profiles = {
+      CUSTOMER: { name: 'Rahul Sharma (Retail)', email: 'retail@a2zdemo.com', password: 'password123', phone: '9876543210', role: 'CUSTOMER' },
+      WHOLESALE_BUYER: { name: 'Biswas Kirana Store (B2B)', email: 'wholesale@a2zdemo.com', password: 'password123', phone: '9876500001', role: 'WHOLESALE_BUYER', gstNumber: '19ABCDE1234F1Z5' },
+      DELIVERY_PARTNER: { name: 'Suman Rider (20-30km Fleet)', email: 'rider@a2zdemo.com', password: 'password123', phone: '9876599999', role: 'DELIVERY_PARTNER' }
+    };
+    const profile = profiles[demoType];
+    setStatusMsg(`Connecting as ${profile.name}...`);
+    try {
+      let res = await fetch(`${API_URL}/users/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: profile.email, password: profile.password })
+      });
+      if (!res.ok) {
+        res = await fetch(`${API_URL}/users/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(profile)
+        });
+      }
+      const data = await res.json();
+      const userObj = data.user || {
+        id: data._id, name: data.name, email: data.email, phone: data.phone, role: data.role, gstNumber: data.gstNumber
+      };
+      setCurrentUser(userObj);
+      localStorage.setItem('a2z_user', JSON.stringify(userObj));
+      setIsWholesale(userObj.role === 'WHOLESALE_BUYER');
+      setStatusMsg(`✅ Logged in as ${userObj.name}`);
+      setViewMode(userObj.role === 'DELIVERY_PARTNER' ? 'ORDERS' : 'STORE');
+    } catch (err) {
+      setStatusMsg(`❌ ${err.message}`);
+    }
   };
+
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const endpoint = authMode === 'LOGIN' ? '/users/login' : '/users/register';
+      const payload = authMode === 'LOGIN' ? { email: authForm.email, password: authForm.password } : authForm;
+      const res = await fetch(`${API_URL}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Auth failed');
+      const userObj = data.user || {
+        id: data._id, name: data.name, email: data.email, phone: data.phone, role: data.role, gstNumber: data.gstNumber
+      };
+      setCurrentUser(userObj);
+      localStorage.setItem('a2z_user', JSON.stringify(userObj));
+      setIsWholesale(userObj.role === 'WHOLESALE_BUYER');
+      setViewMode('STORE');
+    } catch (err) {
+      setStatusMsg(`❌ ${err.message}`);
+    }
+  };
+
+  const saveOrderToDatabase = async (paymentLabel) => {
+    setStatusMsg('Saving order to MongoDB...');
+    try {
+      const orderPayload = {
+        customer: currentUser.id || currentUser._id,
+        items: cart.map((item) => ({
+          product: item._id,
+          quantity: item.qty,
+          price: item.finalPrice
+        })),
+        totalAmount: finalPayableTotal,
+        deliveryAddress: `${deliveryAddress} [${paymentLabel}]`,
+        prescriptionUrl: prescriptionUrl || undefined,
+        deliveryType: hasFood && hasNonFood ? 'SPLIT_FLEET' : hasFood ? 'IMMEDIATE_FOOD' : 'STANDARD_20_30KM',
+        status: 'PENDING'
+      };
+      const res = await fetch(`${API_URL}/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload)
+      });
+      if (!res.ok) throw new Error('Order failed');
+      setCart([]);
+      setDiscountAmount(0);
+      localStorage.removeItem('a2z_cart_cache');
+      setPrescriptionUrl('');
+      setStatusMsg(`🎉 Order Placed (${paymentLabel})!`);
+      fetchOrders();
+      setViewMode('ORDERS');
+    } catch (err) {
+      setStatusMsg(`❌ ${err.message}`);
+    }
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!currentUser) {
+      setStatusMsg('⚠️ Please login or tap a 1-Tap Demo Account first!');
+      setViewMode('ACCOUNT');
+      return;
+    }
+    if (needsRx && !prescriptionUrl.trim()) {
+      alert('Prescription photo or Rx ID is mandatory for restricted medicines!');
+      return;
+    }
+    if (!deliveryAddress.trim()) {
+      alert('Please enter your delivery address (within 20–30km radius)!');
+      return;
+    }
+    if (paymentMethod === 'COD') {
+      await saveOrderToDatabase('COD - Pay on Delivery');
+      return;
+    }
+    if (cloudConfig.razorpayKeyId && typeof window !== 'undefined' && window.Razorpay) {
+      const options = {
+        key: cloudConfig.razorpayKeyId,
+        amount: finalPayableTotal * 100,
+        currency: 'INR',
+        name: 'A2Z Super App',
+        description: '20-30km Hyper-Local Order',
+        handler: async function (response) {
+          await saveOrderToDatabase(`PAID via Razorpay (${response.razorpay_payment_id})`);
+        },
+        prefill: { name: currentUser.name, email: currentUser.email, contact: currentUser.phone || '9876543210' },
+        theme: { color: '#4338ca' }
+      };
+      new window.Razorpay(options).open();
+    } else {
+      const demoPayId = 'pay_A2Z' + Math.floor(100000 + Math.random() * 900000);
+      await saveOrderToDatabase(`PAID Online (${demoPayId})`);
+    }
+  };
+
+  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    try {
+      const res = await fetch(`${API_URL}/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        setStatusMsg(`✅ Order marked as ${newStatus}!`);
+        fetchOrders();
+      }
+    } catch (err) {}
+  };
+
+  // Search Suggestions & Filtering
+  const searchSuggestions = searchQuery.trim()
+    ? products.filter(
+        (p) =>
+          (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (p.brand || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (p.shopName || '').toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 5)
+    : [];
 
   const processedProducts = products
     .filter((p) => (activeTab === 'ALL' ? true : p.category === activeTab))
+    .filter((p) => (selectedStoreFilter ? (p.shopName || '').includes(selectedStoreFilter) : true))
     .filter((p) =>
       searchQuery.trim() === ''
         ? true
         : (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (p.brand || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
           (p.category || '').toLowerCase().includes(searchQuery.toLowerCase())
     )
     .sort((a, b) => {
@@ -706,23 +696,16 @@ export default function SuperAppHome() {
   const hasFood = cart.some((item) => item.category === 'FOOD');
   const hasNonFood = cart.some((item) => item.category !== 'FOOD');
   const needsRx = cart.some((item) => item.category === 'MEDICINE' && item.requiresPrescription);
-  const cartTotal = cart.reduce((sum, item) => sum + item.finalPrice * item.qty, 0);
-
-  const getCategoryLabel = (cat) => {
-    if (cat === 'ALL') return t.catAll;
-    if (cat === 'GENERAL') return t.catGeneral;
-    if (cat === 'FOOD') return t.catFood;
-    if (cat === 'MEDICINE') return t.catMedicine;
-    if (cat === 'ELECTRONICS') return t.catElectronics;
-    return cat;
-  };
+  const cartSubtotal = cart.reduce((sum, item) => sum + item.finalPrice * item.qty, 0);
+  const deliveryFee = cartSubtotal > 999 || cartSubtotal === 0 ? 0 : 25;
+  const finalPayableTotal = Math.max(0, cartSubtotal + deliveryFee - discountAmount);
 
   return (
     <div className="min-h-screen pb-28 bg-slate-50">
-      {/* Top Navbar */}
+      {/* Top Sticky Header */}
       <header className="bg-indigo-700 text-white sticky top-0 z-30 shadow-md">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
-          <div onClick={() => setViewMode('STORE')} className="cursor-pointer">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+          <div onClick={() => { setViewMode('STORE'); setSelectedStoreFilter(''); }} className="cursor-pointer">
             <div className="flex items-center gap-2">
               <ShoppingBag className="w-6 h-6 text-amber-300 shrink-0" />
               <h1 className="text-base sm:text-xl font-extrabold tracking-tight">A2Z Super App</h1>
@@ -737,7 +720,7 @@ export default function SuperAppHome() {
               onClick={toggleLanguage}
               className="px-2.5 py-1.5 rounded-lg text-xs font-extrabold bg-amber-400 text-slate-950 shadow-sm flex items-center gap-1"
             >
-              <Languages className="w-3.5 h-3.5" /> {lang === 'EN' ? 'বাংলা' : 'English'}
+              <Languages className="w-3.5 h-3.5" /> {lang === 'EN' ? 'বাংলা' : 'EN'}
             </button>
             <button
               onClick={() => setViewMode('STORE')}
@@ -775,23 +758,12 @@ export default function SuperAppHome() {
           </div>
         </div>
 
-        {/* Sub-Header: Server Wake Status + Wholesale Toggle */}
-        <div className="bg-indigo-800 px-4 py-2">
-          <div className="max-w-4xl mx-auto flex items-center justify-between text-xs gap-2">
-            {serverStatus === 'WAKING_UP' ? (
-              <span className="text-amber-300 font-bold flex items-center gap-1.5 animate-pulse truncate">
-                <Server className="w-3.5 h-3.5 shrink-0" /> {t.wakingUp}
-              </span>
-            ) : serverStatus === 'ERROR' ? (
-              <span className="text-rose-300 font-bold flex items-center gap-1.5 truncate">
-                <ServerCrash className="w-3.5 h-3.5 shrink-0" /> {t.offline}
-              </span>
-            ) : (
-              <span className="text-indigo-100 font-medium truncate">
-                {isWholesale ? t.wholesaleActive : t.retailActive}
-              </span>
-            )}
-
+        {/* Wholesale vs Retail Bar */}
+        <div className="bg-indigo-900 px-4 py-2">
+          <div className="max-w-5xl mx-auto flex items-center justify-between text-xs gap-2">
+            <span className="text-indigo-100 font-medium truncate">
+              {isWholesale ? t.wholesaleActive : t.retailActive}
+            </span>
             <button
               onClick={() => setIsWholesale(!isWholesale)}
               className={`px-3 py-1 rounded-full font-bold transition whitespace-nowrap shrink-0 ${
@@ -806,36 +778,7 @@ export default function SuperAppHome() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 pt-4">
-        {/* PWA Android App Install Banner */}
-        {!isStandalone && showInstallBanner && (
-          <div className="mb-4 p-3.5 rounded-2xl bg-gradient-to-r from-indigo-900 to-indigo-700 text-white shadow-md flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-400 text-slate-950 rounded-xl shrink-0">
-                <Download className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-xs sm:text-sm font-extrabold">{t.installTitle}</h3>
-                <p className="text-[11px] text-indigo-200">{t.installSub}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                onClick={handleInstallClick}
-                className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs px-3 py-2 rounded-xl shadow"
-              >
-                {t.installBtn}
-              </button>
-              <button
-                onClick={() => setShowInstallBanner(false)}
-                className="p-1.5 text-indigo-200 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
+      <main className="max-w-5xl mx-auto px-4 pt-4">
         {statusMsg && (
           <div className="mb-4 p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-950 text-xs sm:text-sm font-medium flex items-center justify-between shadow-sm">
             <span>{statusMsg}</span>
@@ -843,11 +786,11 @@ export default function SuperAppHome() {
           </div>
         )}
 
-        {/* ==================== STOREFRONT VIEW ==================== */}
+        {/* ==================== 1. PROFESSIONAL STOREFRONT ==================== */}
         {viewMode === 'STORE' && (
           <>
-            {/* Search & Price Sort Bar */}
-            <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm mb-3 space-y-2.5">
+            {/* Search Bar with Live Auto-Suggestions Dropdown */}
+            <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm mb-4 space-y-2.5 relative">
               <div className="flex flex-col sm:flex-row gap-2">
                 <div className="relative flex-1">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -855,123 +798,275 @@ export default function SuperAppHome() {
                     type="text"
                     placeholder={t.searchPlaceholder}
                     value={searchQuery}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:border-indigo-500 outline-none"
+                    className="w-full pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:border-indigo-600 outline-none"
                   />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+
+                  {/* Auto-Suggestions Dropdown */}
+                  {showSuggestions && searchSuggestions.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-slate-200 z-40 overflow-hidden">
+                      <div className="px-3 py-1.5 bg-slate-50 text-[10px] font-bold uppercase text-slate-500">
+                        Matching Products & Brands
+                      </div>
+                      {searchSuggestions.map((item) => (
+                        <div
+                          key={item._id}
+                          onMouseDown={() => openProductModal(item)}
+                          className="px-3 py-2.5 hover:bg-indigo-50 cursor-pointer flex items-center justify-between border-t border-slate-100 text-xs"
+                        >
+                          <div>
+                            <div className="font-bold text-slate-900">{item.name}</div>
+                            <div className="text-[10px] text-slate-500">
+                              {item.brand || 'A2Z'} • in {item.category}
+                            </div>
+                          </div>
+                          <span className="font-extrabold text-indigo-700">₹{item.price}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
                 <select
                   value={sortOption}
                   onChange={(e) => setSortOption(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none"
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 outline-none"
                 >
-                  <option value="NEWEST">{t.sortNewest}</option>
-                  <option value="PRICE_LOW">{t.sortLow}</option>
-                  <option value="PRICE_HIGH">{t.sortHigh}</option>
+                  <option value="NEWEST">Sort: Featured</option>
+                  <option value="PRICE_LOW">Price: Low to High</option>
+                  <option value="PRICE_HIGH">Price: High to Low</option>
                 </select>
               </div>
 
-              {/* Category Filter Pills */}
+              {/* Featured Category Pills */}
               <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                {['ALL', 'GENERAL', 'FOOD', 'MEDICINE', 'ELECTRONICS'].map((cat) => (
+                {[
+                  { id: 'ALL', label: '🔥 All Categories' },
+                  { id: 'GENERAL', label: '🛒 Grocery & Kirana' },
+                  { id: 'FOOD', label: '🍛 Hot Food (Zomato Mode)' },
+                  { id: 'MEDICINE', label: '💊 Pharmacy & Rx' },
+                  { id: 'ELECTRONICS', label: '⚡ Electronics & Gadgets' }
+                ].map((cat) => (
                   <button
-                    key={cat}
-                    onClick={() => setActiveTab(cat)}
+                    key={cat.id}
+                    onClick={() => setActiveTab(cat.id)}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition ${
-                      activeTab === cat
+                      activeTab === cat.id
                         ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
                   >
-                    {getCategoryLabel(cat)}
+                    {cat.label}
                   </button>
                 ))}
-                <button
-                  onClick={fetchProducts}
-                  className="px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-1 ml-auto"
+              </div>
+            </div>
+
+            {/* Promotional Hero Banners */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+              {PROMO_BANNERS.map((banner) => (
+                <div
+                  key={banner.id}
+                  className={`rounded-2xl p-4 text-white bg-gradient-to-r ${banner.bg} shadow-md flex flex-col justify-between`}
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${serverStatus === 'WAKING_UP' ? 'animate-spin' : ''}`} />
-                </button>
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-white/20">
+                      {banner.badge}
+                    </span>
+                    <h2 className="text-base sm:text-lg font-extrabold mt-1.5 leading-snug">
+                      {banner.title}
+                    </h2>
+                    <p className="text-xs text-white/85 mt-1">{banner.sub}</p>
+                  </div>
+                  <div className="mt-3 pt-2.5 border-t border-white/15 flex items-center justify-between text-xs">
+                    <span className="font-mono font-bold bg-black/25 px-2.5 py-1 rounded-lg">
+                      Use Code: {banner.code}
+                    </span>
+                    <button
+                      onClick={() => applyCoupon(banner.code)}
+                      className="bg-amber-400 text-slate-950 font-extrabold px-3 py-1 rounded-lg shadow-sm"
+                    >
+                      Apply ₹50 Off
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Popular Nearby Stores (20-30km Discovery) */}
+            <div className="mb-5">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
+                  <Store className="w-4 h-4 text-indigo-600" /> {t.nearbyStores}
+                </h3>
+                {selectedStoreFilter && (
+                  <button
+                    onClick={() => setSelectedStoreFilter('')}
+                    className="text-xs font-bold text-rose-600 underline"
+                  >
+                    {t.clearFilter}
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {NEARBY_STORES.map((st) => (
+                  <div
+                    key={st.id}
+                    onClick={() => {
+                      setSelectedStoreFilter(selectedStoreFilter === st.name ? '' : st.name);
+                      setActiveTab(st.category);
+                    }}
+                    className={`cursor-pointer p-3 rounded-2xl border transition ${
+                      selectedStoreFilter === st.name
+                        ? 'bg-indigo-50 border-indigo-600 shadow-sm'
+                        : 'bg-white border-slate-200 hover:border-indigo-400'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 mb-1">
+                      <span>📍 {st.dist}</span>
+                      <span className="text-amber-600 font-extrabold">★ {st.rating}</span>
+                    </div>
+                    <div className="font-extrabold text-slate-900 text-xs line-clamp-1">{st.name}</div>
+                    <div className="text-[10px] text-indigo-600 font-semibold mt-0.5">{st.tag}</div>
+                  </div>
+                ))}
               </div>
             </div>
 
             {/* Product Grid */}
+            <div className="flex items-center justify-between mb-2.5">
+              <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
+                <Flame className="w-4 h-4 text-amber-500" /> {t.trendingTitle} ({processedProducts.length})
+              </h3>
+              <button
+                onClick={handleQuickDemoProduct}
+                className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-xl flex items-center gap-1"
+              >
+                <Sparkles className="w-3.5 h-3.5" /> + Add Rich Demo Product
+              </button>
+            </div>
+
             {loading && products.length === 0 ? (
               <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center my-4">
                 <Server className="w-8 h-8 text-indigo-500 animate-bounce mx-auto mb-2" />
-                <h3 className="font-bold text-slate-800 text-sm">{t.wakingUp}</h3>
+                <h3 className="font-bold text-slate-800 text-sm">Loading Live Catalogue from Render...</h3>
               </div>
             ) : processedProducts.length === 0 ? (
               <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center my-4">
                 <Package className="w-10 h-10 text-indigo-500 mx-auto mb-2" />
-                <h3 className="font-bold text-slate-800">{t.noProductsTitle}</h3>
-                <p className="text-xs text-slate-500 mt-1 mb-4">{t.noProductsSub}</p>
+                <h3 className="font-bold text-slate-800">No Matching Products</h3>
+                <p className="text-xs text-slate-500 mt-1 mb-4">
+                  Tap below to populate a rich product with variants, specs & wholesale slabs.
+                </p>
                 <button
                   onClick={handleQuickDemoProduct}
                   className="bg-indigo-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl inline-flex items-center gap-1.5"
                 >
-                  <Sparkles className="w-4 h-4" /> {t.addSampleBtn}
+                  <Sparkles className="w-4 h-4" /> Add Rich Demo Product
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
                 {processedProducts.map((product) => {
                   const displayPrice = isWholesale && product.wholesalePrice
                     ? product.wholesalePrice
                     : product.price;
+                  const retailMrp = product.mrp || Math.round(product.price * 1.18);
+                  const discountPct = Math.max(5, Math.round(((retailMrp - displayPrice) / retailMrp) * 100));
 
                   return (
                     <div
                       key={product._id}
-                      className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm flex flex-col justify-between"
+                      className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between"
                     >
                       <div>
-                        {product.imageUrl && (
-                          <div className="h-40 w-full bg-slate-100 overflow-hidden">
+                        {/* Clickable Image Opens Full Product Detail Modal */}
+                        <div
+                          onClick={() => openProductModal(product)}
+                          className="h-44 w-full bg-slate-100 relative cursor-pointer overflow-hidden group"
+                        >
+                          {product.imageUrl ? (
                             <img
                               src={product.imageUrl}
                               alt={product.name}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                             />
-                          </div>
-                        )}
-                        <div className="p-4 pb-0">
-                          <div className="flex items-center justify-between gap-2 mb-1.5">
-                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-                              {getCategoryLabel(product.category)}
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
+                              Tap for Product Specs & Slabs
+                            </div>
+                          )}
+                          <span className="absolute top-2.5 left-2.5 bg-emerald-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-md shadow">
+                            {discountPct}% OFF
+                          </span>
+                          <span className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
+                            ★ {product.rating || 4.7} ({product.reviewsCount || 24})
+                          </span>
+                        </div>
+
+                        <div className="p-3.5 pb-0">
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">
+                              {product.brand || product.category}
                             </span>
                             {product.requiresPrescription && (
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-700 flex items-center gap-1">
-                                <ShieldAlert className="w-3 h-3" /> {t.rxRequired}
+                                <ShieldAlert className="w-3 h-3" /> Rx Required
                               </span>
                             )}
                           </div>
-                          <h3 className="font-bold text-slate-900 text-base">{product.name}</h3>
+
+                          <h3
+                            onClick={() => openProductModal(product)}
+                            className="font-extrabold text-slate-900 text-sm sm:text-base cursor-pointer hover:text-indigo-700 line-clamp-1"
+                          >
+                            {product.name}
+                          </h3>
+                          <p className="text-[11px] text-slate-500 mt-0.5 truncate">
+                            🏪 {product.shopName || 'A2Z Verified Local Partner'}
+                          </p>
                         </div>
                       </div>
 
-                      <div className="p-4 mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                      <div className="p-3.5 mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
                         <div>
-                          <div className="text-lg font-extrabold text-indigo-700">
+                          <div className="text-base sm:text-lg font-extrabold text-indigo-700">
                             ₹{displayPrice}
-                            {isWholesale && (
-                              <span className="text-xs text-slate-400 line-through ml-1.5 font-normal">
-                                ₹{product.price}
-                              </span>
-                            )}
+                            <span className="text-xs text-slate-400 line-through ml-1.5 font-normal">
+                              ₹{retailMrp}
+                            </span>
                           </div>
-                          <div className="text-[11px] text-slate-500">
+                          <div className="text-[10px] font-semibold text-emerald-700">
                             {isWholesale
-                              ? `${t.minOrder} ${product.minWholesaleQty || 5} ${t.units}`
-                              : t.fastDelivery}
+                              ? `B2B MOQ: ${product.minWholesaleQty || 5} units`
+                              : `Wholesale from ₹${product.wholesalePrice || Math.round(product.price * 0.85)}`}
                           </div>
                         </div>
 
-                        <button
-                          onClick={() => addToCart(product)}
-                          className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm"
-                        >
-                          {t.addBtn} {isWholesale ? `(${product.minWholesaleQty || 5})` : ''}
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => openProductModal(product)}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-2 rounded-xl"
+                          >
+                            Details
+                          </button>
+                          <button
+                            onClick={() => addToCart(product)}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm"
+                          >
+                            + Add
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -979,27 +1074,97 @@ export default function SuperAppHome() {
               </div>
             )}
 
-            {/* Smart Cart Box with GPS Pinning */}
+            {/* Recently Viewed Products Carousel */}
+            {recentlyViewed.length > 0 && (
+              <div className="mt-7 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 className="text-xs sm:text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-indigo-600" /> {t.recentlyViewedTitle}
+                </h3>
+                <div className="flex gap-3 overflow-x-auto pb-1 no-scrollbar">
+                  {recentlyViewed.map((item) => (
+                    <div
+                      key={item._id}
+                      onClick={() => openProductModal(item)}
+                      className="min-w-[150px] max-w-[150px] border border-slate-200 rounded-xl p-2.5 cursor-pointer hover:border-indigo-500 bg-slate-50/60 shrink-0"
+                    >
+                      {item.imageUrl && (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="w-full h-20 object-cover rounded-lg mb-1.5"
+                        />
+                      )}
+                      <div className="text-xs font-bold text-slate-900 truncate">{item.name}</div>
+                      <div className="text-xs font-extrabold text-indigo-700 mt-0.5">₹{item.price}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ==================== SMART CART & COUPON CHECKOUT ==================== */}
             {cart.length > 0 && (
               <div className="mt-6 bg-white rounded-2xl border-2 border-indigo-600 p-4 shadow-lg">
-                <h3 className="font-extrabold text-slate-900 text-sm mb-2 flex items-center justify-between">
-                  <span>{t.smartCart} ({cart.length} {t.items})</span>
-                  <span className="text-indigo-700 text-base">{t.total}: ₹{cartTotal}</span>
+                <h3 className="font-extrabold text-slate-900 text-sm mb-3 flex items-center justify-between">
+                  <span>🛒 Smart Cart ({cart.length} items)</span>
+                  <span className="text-indigo-700 text-base">Payable: ₹{finalPayableTotal}</span>
                 </h3>
 
-                {hasFood && hasNonFood && (
-                  <div className="mb-3 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-                    ⚡ <strong>{t.splitFleetTitle}</strong> {t.splitFleetDesc}
-                  </div>
-                )}
+                {/* Cart Items with +/- Quantity & Dynamic Wholesale Slab Updates */}
+                <div className="space-y-2 max-h-52 overflow-y-auto mb-3">
+                  {cart.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                      <div>
+                        <div className="font-bold text-slate-900">
+                          {item.name} <span className="text-indigo-600">({item.selectedVariant})</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          Unit Rate: ₹{item.finalPrice} × {item.qty} = <strong>₹{item.finalPrice * item.qty}</strong>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => updateCartQty(idx, -1)}
+                          className="w-6 h-6 rounded-lg bg-white border font-bold text-slate-700"
+                        >
+                          -
+                        </button>
+                        <span className="font-extrabold px-1">{item.qty}</span>
+                        <button
+                          onClick={() => updateCartQty(idx, 1)}
+                          className="w-6 h-6 rounded-lg bg-indigo-600 text-white font-bold"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Coupon Bar */}
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="text"
+                    placeholder="Coupon Code (Try A2ZBULK or HOTFOOD50)"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    className="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-xs uppercase font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => applyCoupon()}
+                    className="bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl"
+                  >
+                    Apply
+                  </button>
+                </div>
 
                 {needsRx && (
                   <div className="mb-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs space-y-2">
-                    <p className="font-bold">{t.rxMandatory}</p>
+                    <p className="font-bold">🩺 Doctor Prescription Required for Medicine *</p>
                     <div className="flex flex-col sm:flex-row gap-2">
                       <label className="cursor-pointer bg-rose-600 text-white font-bold px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 shrink-0">
-                        <Camera className="w-3.5 h-3.5" />
-                        {uploadingImg ? '...' : t.uploadRx}
+                        <Camera className="w-3.5 h-3.5" /> Upload Rx Photo
                         <input
                           type="file"
                           accept="image/*"
@@ -1009,7 +1174,7 @@ export default function SuperAppHome() {
                       </label>
                       <input
                         type="text"
-                        placeholder={t.rxPlaceholder}
+                        placeholder="Or enter Doctor Rx ID..."
                         value={prescriptionUrl}
                         onChange={(e) => setPrescriptionUrl(e.target.value)}
                         className="w-full border border-rose-300 rounded-lg px-2.5 py-1.5 text-xs bg-white"
@@ -1018,82 +1183,52 @@ export default function SuperAppHome() {
                   </div>
                 )}
 
-                {/* Delivery Address & GPS Pinning */}
-                <div className="mb-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-bold text-slate-700">
-                      {t.addressLabel}
-                    </label>
-                    <button
-                      type="button"
-                      onClick={handleDetectGPS}
-                      className="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-extrabold px-2.5 py-1 rounded-lg flex items-center gap-1 border border-indigo-200"
-                    >
-                      <Navigation className="w-3 h-3 text-indigo-600" />
-                      {locatingGps ? 'Locating...' : t.detectGps}
-                    </button>
-                  </div>
-
+                <div className="mb-3">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    📍 Delivery Address (20–30km Zone) *
+                  </label>
                   <input
                     type="text"
-                    placeholder={t.addressPlaceholder}
+                    placeholder="Enter village/town, landmark, and pin code..."
                     value={deliveryAddress}
                     onChange={(e) => setDeliveryAddress(e.target.value)}
                     className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs"
                   />
-
-                  {userLocation && (
-                    <div className={`p-2 rounded-lg text-xs font-bold flex items-center justify-between ${
-                      userLocation.distanceKm <= 30 ? 'bg-emerald-50 text-emerald-900 border border-emerald-200' : 'bg-rose-50 text-rose-900 border border-rose-200'
-                    }`}>
-                      <span>📍 GPS Verified: {userLocation.distanceKm} km from hub</span>
-                      <span>{userLocation.distanceKm <= 30 ? '✅ Within Zone' : '❌ Out of Zone (>30km)'}</span>
-                    </div>
-                  )}
                 </div>
 
-                <div className="mb-3">
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    {t.paymentLabel}
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('RAZORPAY')}
-                      className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 ${
-                        paymentMethod === 'RAZORPAY'
-                          ? 'bg-indigo-50 border-indigo-600 text-indigo-900'
-                          : 'bg-white border-slate-200 text-slate-600'
-                      }`}
-                    >
-                      <CreditCard className="w-4 h-4 text-indigo-600" /> {t.payRazorpay}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('COD')}
-                      className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 ${
-                        paymentMethod === 'COD'
-                          ? 'bg-emerald-50 border-emerald-600 text-emerald-900'
-                          : 'bg-white border-slate-200 text-slate-600'
-                      }`}
-                    >
-                      <Banknote className="w-4 h-4 text-emerald-600" /> {t.payCod}
-                    </button>
+                {/* Bill Breakdown */}
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1 mb-3">
+                  <div className="flex justify-between"><span>Items Subtotal:</span><span>₹{cartSubtotal}</span></div>
+                  <div className="flex justify-between"><span>Delivery Fee (Free above ₹999):</span><span>{deliveryFee === 0 ? 'FREE' : `₹${deliveryFee}`}</span></div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-emerald-700 font-bold">
+                      <span>Coupon Discount:</span><span>-₹{discountAmount}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-extrabold text-sm pt-1 border-t">
+                    <span>Grand Total:</span><span>₹{finalPayableTotal}</span>
                   </div>
                 </div>
 
-                <div className="space-y-1.5 max-h-40 overflow-y-auto mb-3">
-                  {cart.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-xs bg-slate-50 p-2 rounded-lg">
-                      <span className="font-medium text-slate-800">{item.name} × {item.qty}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold">₹{item.finalPrice * item.qty}</span>
-                        <button onClick={() => removeFromCart(idx)} className="text-rose-500">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('RAZORPAY')}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 ${
+                      paymentMethod === 'RAZORPAY' ? 'bg-indigo-50 border-indigo-600 text-indigo-900' : 'bg-white'
+                    }`}
+                  >
+                    <CreditCard className="w-4 h-4 text-indigo-600" /> Razorpay (UPI/Card)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('COD')}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 ${
+                      paymentMethod === 'COD' ? 'bg-emerald-50 border-emerald-600 text-emerald-900' : 'bg-white'
+                    }`}
+                  >
+                    <Banknote className="w-4 h-4 text-emerald-600" /> Cash on Delivery
+                  </button>
                 </div>
 
                 <button
@@ -1101,16 +1236,207 @@ export default function SuperAppHome() {
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-1.5 shadow"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  {paymentMethod === 'RAZORPAY'
-                    ? `${t.checkoutRazorpay} (₹${cartTotal})`
-                    : `${t.checkoutCod} (₹${cartTotal})`}
+                  Confirm Order (₹{finalPayableTotal})
                 </button>
               </div>
             )}
           </>
         )}
 
-        {/* ==================== ACCOUNT VIEW ==================== */}
+        {/* ==================== 2. ADVANCED PRODUCT DETAIL DRAWER / MODAL ==================== */}
+        {selectedProduct && (
+          <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
+            <div className="bg-white w-full max-w-2xl rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto p-5 shadow-2xl space-y-4">
+              <div className="flex items-start justify-between border-b pb-3">
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">
+                    {selectedProduct.brand || selectedProduct.category}
+                  </span>
+                  <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 mt-1">
+                    {selectedProduct.name}
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Sold by: <strong>{selectedProduct.shopName || 'A2Z Central Hub'}</strong> • ★ {selectedProduct.rating || 4.7}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedProduct(null)}
+                  className="p-2 rounded-full bg-slate-100 hover:bg-slate-200"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Image with Tap-to-Zoom */}
+              {selectedProduct.imageUrl && (
+                <div
+                  onClick={() => setZoomImg(!zoomImg)}
+                  className="w-full bg-slate-100 rounded-2xl overflow-hidden cursor-zoom-in relative"
+                >
+                  <img
+                    src={selectedProduct.imageUrl}
+                    alt={selectedProduct.name}
+                    className={`w-full object-cover transition-transform duration-300 ${
+                      zoomImg ? 'scale-150 h-80' : 'h-56'
+                    }`}
+                  />
+                  <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded">
+                    {zoomImg ? 'Tap to Reset Zoom' : '🔍 Tap Image to Zoom'}
+                  </span>
+                </div>
+              )}
+
+              {/* Variant / Pack Size Selector */}
+              <div>
+                <label className="block text-xs font-extrabold text-slate-700 mb-1.5">
+                  Select Pack / Variant:
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {(Array.isArray(selectedProduct.variants) && selectedProduct.variants.length > 0
+                    ? selectedProduct.variants
+                    : ['Standard Pack', 'Family / Bulk Pack']
+                  ).map((v) => (
+                    <button
+                      key={v}
+                      onClick={() => setSelectedVariant(v)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border ${
+                        selectedVariant === v
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : 'bg-slate-50 text-slate-700 border-slate-200'
+                      }`}
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Dynamic Wholesale Quantity Price Slabs Table */}
+              <div className="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-3.5">
+                <div className="text-xs font-extrabold text-indigo-950 mb-2">
+                  📦 Tiered Wholesale & Bulk Price Slabs (Auto-Applies on Quantity):
+                </div>
+                <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                  <div className={`p-2 rounded-xl border ${detailQty < 5 ? 'bg-white border-indigo-600 font-bold' : 'bg-white/60'}`}>
+                    <div className="text-[10px] text-slate-500">1–4 Units</div>
+                    <div className="text-indigo-800 font-extrabold">₹{selectedProduct.price}</div>
+                  </div>
+                  <div className={`p-2 rounded-xl border ${detailQty >= 5 && detailQty < 20 ? 'bg-white border-indigo-600 font-bold' : 'bg-white/60'}`}>
+                    <div className="text-[10px] text-slate-500">5–19 Units</div>
+                    <div className="text-emerald-700 font-extrabold">
+                      ₹{selectedProduct.wholesalePrice || Math.round(selectedProduct.price * 0.85)}
+                    </div>
+                  </div>
+                  <div className={`p-2 rounded-xl border ${detailQty >= 20 && detailQty < 50 ? 'bg-white border-indigo-600 font-bold' : 'bg-white/60'}`}>
+                    <div className="text-[10px] text-slate-500">20–49 Units</div>
+                    <div className="text-emerald-700 font-extrabold">
+                      ₹{Math.round((selectedProduct.wholesalePrice || selectedProduct.price * 0.85) * 0.94)}
+                    </div>
+                  </div>
+                  <div className={`p-2 rounded-xl border ${detailQty >= 50 ? 'bg-white border-indigo-600 font-bold' : 'bg-white/60'}`}>
+                    <div className="text-[10px] text-slate-500">50+ Bulk</div>
+                    <div className="text-emerald-700 font-extrabold">
+                      ₹{Math.round((selectedProduct.wholesalePrice || selectedProduct.price * 0.85) * 0.88)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quantity Picker + Add to Cart */}
+              <div className="flex items-center justify-between bg-slate-100 p-3 rounded-2xl">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-700">Quantity:</span>
+                  <button
+                    onClick={() => setDetailQty(Math.max(1, detailQty - 1))}
+                    className="w-8 h-8 rounded-xl bg-white font-extrabold border"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    value={detailQty}
+                    onChange={(e) => setDetailQty(Math.max(1, Number(e.target.value)))}
+                    className="w-14 text-center font-extrabold text-sm bg-white border rounded-xl py-1"
+                  />
+                  <button
+                    onClick={() => setDetailQty(detailQty + 1)}
+                    className="w-8 h-8 rounded-xl bg-white font-extrabold border"
+                  >
+                    +
+                  </button>
+                </div>
+                <button
+                  onClick={() => addToCart(selectedProduct, detailQty, selectedVariant)}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow"
+                >
+                  Add for ₹{calculateUnitPrice(selectedProduct, detailQty) * detailQty}
+                </button>
+              </div>
+
+              {/* Product Description & Specifications */}
+              <div className="space-y-2 text-xs text-slate-700 border-t pt-3">
+                <div>
+                  <strong className="text-slate-900">Product Description:</strong>
+                  <p className="mt-0.5">{selectedProduct.description || 'Verified local supply with fast 20–30km delivery.'}</p>
+                </div>
+                <div>
+                  <strong className="text-slate-900">Specifications & Highlights:</strong>
+                  <p className="mt-0.5 text-indigo-800 font-medium">
+                    {selectedProduct.specifications || 'Quality Checked • Ready Stock • GST Invoice Supported'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Customer Ratings & Reviews Section */}
+              <div className="border-t pt-3 space-y-3">
+                <h4 className="text-xs font-extrabold text-slate-900">
+                  ⭐ Customer Reviews ({selectedProduct.reviewsCount || 24})
+                </h4>
+                <form onSubmit={handleAddReview} className="flex gap-2">
+                  <select
+                    value={reviewInput.rating}
+                    onChange={(e) => setReviewInput({ ...reviewInput, rating: e.target.value })}
+                    className="border rounded-xl px-2 py-1.5 text-xs font-bold bg-slate-50"
+                  >
+                    <option value="5">5 ★</option>
+                    <option value="4">4 ★</option>
+                    <option value="3">3 ★</option>
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Write a customer review..."
+                    value={reviewInput.comment}
+                    onChange={(e) => setReviewInput({ ...reviewInput, comment: e.target.value })}
+                    className="flex-1 border rounded-xl px-3 py-1.5 text-xs"
+                  />
+                  <button type="submit" className="bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl">
+                    Post
+                  </button>
+                </form>
+
+                <div className="space-y-2 max-h-36 overflow-y-auto">
+                  {(selectedProduct.reviews && selectedProduct.reviews.length > 0
+                    ? selectedProduct.reviews
+                    : [
+                        { userName: 'Suman Mondal (Karimpur)', rating: 5, comment: 'Fast delivery and genuine wholesale rate!', date: 'Verified Buyer' },
+                        { userName: 'Priya Stores', rating: 5, comment: 'Great packaging, ordered 20 units for my shop.', date: 'B2B Partner' }
+                      ]
+                  ).map((rev, i) => (
+                    <div key={i} className="bg-slate-50 p-2.5 rounded-xl text-xs border border-slate-100">
+                      <div className="flex justify-between font-bold text-slate-800">
+                        <span>{rev.userName}</span>
+                        <span className="text-amber-600">{'★'.repeat(rev.rating || 5)}</span>
+                      </div>
+                      <p className="text-slate-600 mt-0.5">{rev.comment}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ==================== 3. ACCOUNT VIEW ==================== */}
         {viewMode === 'ACCOUNT' && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
             {currentUser ? (
@@ -1124,18 +1450,18 @@ export default function SuperAppHome() {
                     <p className="text-xs text-slate-500">{currentUser.email} • 📞 {currentUser.phone}</p>
                   </div>
                   <button
-                    onClick={handleLogout}
+                    onClick={() => { localStorage.removeItem('a2z_user'); setCurrentUser(null); }}
                     className="bg-rose-100 text-rose-700 font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-1"
                   >
-                    <LogOut className="w-4 h-4" /> {t.logout}
+                    <LogOut className="w-4 h-4" /> Logout
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <button onClick={() => setViewMode('STORE')} className="bg-indigo-600 text-white font-bold text-xs py-3 rounded-xl">
-                    {t.goStore}
+                    Go to Storefront
                   </button>
                   <button onClick={() => { fetchOrders(); setViewMode('ORDERS'); }} className="bg-slate-800 text-white font-bold text-xs py-3 rounded-xl">
-                    {t.viewOrders}
+                    View Live Orders
                   </button>
                 </div>
               </div>
@@ -1143,48 +1469,26 @@ export default function SuperAppHome() {
               <div>
                 <div className="mb-6 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                   <p className="text-xs font-extrabold text-slate-700 mb-2 flex items-center gap-1">
-                    <Sparkles className="w-4 h-4 text-indigo-600" /> {t.demoLoginTitle}
+                    <Sparkles className="w-4 h-4 text-indigo-600" /> 1-Tap Instant Demo Login:
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <button onClick={() => handleQuickDemoAuth('CUSTOMER')} className="bg-white border p-2.5 rounded-xl text-xs text-left font-bold">
-                      {t.roleCustomer}
+                      🛍️ Retail Customer
                     </button>
                     <button onClick={() => handleQuickDemoAuth('WHOLESALE_BUYER')} className="bg-white border p-2.5 rounded-xl text-xs text-left font-bold text-emerald-800">
-                      {t.roleWholesale}
+                      📦 Wholesale Buyer (B2B)
                     </button>
                     <button onClick={() => handleQuickDemoAuth('DELIVERY_PARTNER')} className="bg-white border p-2.5 rounded-xl text-xs text-left font-bold text-amber-800">
-                      {t.roleRider}
+                      🛵 Delivery Rider
                     </button>
                   </div>
                 </div>
 
-                <div className="flex gap-2 mb-4 border-b pb-3">
-                  <button onClick={() => setAuthMode('LOGIN')} className={`flex-1 py-2 rounded-xl text-xs font-bold ${authMode === 'LOGIN' ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}>
-                    {t.loginTab}
-                  </button>
-                  <button onClick={() => setAuthMode('REGISTER')} className={`flex-1 py-2 rounded-xl text-xs font-bold ${authMode === 'REGISTER' ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}>
-                    {t.registerTab}
-                  </button>
-                </div>
-
                 <form onSubmit={handleAuthSubmit} className="space-y-3">
-                  {authMode === 'REGISTER' && (
-                    <>
-                      <input type="text" required placeholder="Full Name or Shop Name" value={authForm.name} onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
-                      <div className="grid grid-cols-2 gap-2">
-                        <input type="text" required placeholder="Phone Number" value={authForm.phone} onChange={(e) => setAuthForm({ ...authForm, phone: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
-                        <select value={authForm.role} onChange={(e) => setAuthForm({ ...authForm, role: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm bg-white">
-                          <option value="CUSTOMER">{t.roleCustomer}</option>
-                          <option value="WHOLESALE_BUYER">{t.roleWholesale}</option>
-                          <option value="DELIVERY_PARTNER">{t.roleRider}</option>
-                        </select>
-                      </div>
-                    </>
-                  )}
                   <input type="email" required placeholder="Email Address" value={authForm.email} onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
                   <input type="password" required placeholder="Password" value={authForm.password} onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
                   <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-sm">
-                    {authMode === 'LOGIN' ? t.loginTab : t.registerTab}
+                    Login / Continue
                   </button>
                 </form>
               </div>
@@ -1192,109 +1496,95 @@ export default function SuperAppHome() {
           </div>
         )}
 
-        {/* ==================== ORDERS VIEW ==================== */}
+        {/* ==================== 4. ORDERS VIEW ==================== */}
         {viewMode === 'ORDERS' && (
           <div className="space-y-3">
             <div className="bg-white rounded-2xl p-4 border flex items-center justify-between">
               <h2 className="text-base font-extrabold flex items-center gap-1.5">
-                <ClipboardList className="w-5 h-5 text-indigo-600" /> {t.liveOrdersTitle} ({orders.length})
+                <ClipboardList className="w-5 h-5 text-indigo-600" /> Live Orders ({orders.length})
               </h2>
               <button onClick={fetchOrders} className="bg-slate-100 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1">
-                <RefreshCw className="w-3.5 h-3.5" /> {t.refresh}
+                <RefreshCw className="w-3.5 h-3.5" /> Refresh
               </button>
             </div>
-
-            {ordersLoading ? (
-              <div className="text-center py-12 text-slate-500 text-sm">Loading...</div>
-            ) : orders.length === 0 ? (
-              <div className="bg-white rounded-2xl border p-8 text-center text-sm text-slate-500">{t.noOrders}</div>
-            ) : (
-              orders.map((order) => (
-                <div key={order._id} className="bg-white rounded-2xl p-4 border shadow-sm space-y-2.5">
-                  <div className="flex justify-between border-b pb-2">
-                    <div>
-                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">
-                        {order.status || 'PENDING'}
-                      </span>
-                      <h3 className="font-bold text-sm mt-1">{order.customer?.name || 'Customer'}</h3>
-                      <p className="text-xs text-slate-500">{order.deliveryAddress}</p>
-                    </div>
-                    <div className="text-base font-extrabold text-indigo-700">₹{order.totalAmount}</div>
+            {orders.map((order) => (
+              <div key={order._id} className="bg-white rounded-2xl p-4 border shadow-sm space-y-2.5">
+                <div className="flex justify-between border-b pb-2">
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">
+                      {order.status || 'PENDING'}
+                    </span>
+                    <h3 className="font-bold text-sm mt-1">{order.customer?.name || 'Verified Buyer'}</h3>
+                    <p className="text-xs text-slate-500">{order.deliveryAddress}</p>
                   </div>
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {['CONFIRMED', 'OUT_FOR_DELIVERY', 'DELIVERED'].map((st) => (
-                      <button
-                        key={st}
-                        onClick={() => handleUpdateOrderStatus(order._id, st)}
-                        className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold ${
-                          order.status === st ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'
-                        }`}
-                      >
-                        {st.replace(/_/g, ' ')}
-                      </button>
-                    ))}
-                  </div>
+                  <div className="text-base font-extrabold text-indigo-700">₹{order.totalAmount}</div>
                 </div>
-              ))
-            )}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {['CONFIRMED', 'OUT_FOR_DELIVERY', 'DELIVERED'].map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => handleUpdateOrderStatus(order._id, st)}
+                      className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold ${
+                        order.status === st ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      {st.replace(/_/g, ' ')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* ==================== ADMIN VIEW ==================== */}
+        {/* ==================== 5. ADMIN VIEW ==================== */}
         {viewMode === 'ADMIN' && (
           <div className="bg-white rounded-2xl shadow-sm border p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">{t.adminTitle}</h2>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setShowKeySettings(!showKeySettings)} className="text-xs bg-slate-100 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1">
-                  <Settings className="w-3.5 h-3.5" /> {t.keysBtn}
-                </button>
-                <button type="button" onClick={handleQuickDemoProduct} className="text-xs bg-purple-100 text-purple-800 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5" /> {t.sampleBtn}
-                </button>
-              </div>
+              <h2 className="text-lg font-bold">Add Rich Product (Admin)</h2>
+              <button
+                type="button"
+                onClick={handleQuickDemoProduct}
+                className="text-xs bg-purple-100 text-purple-800 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1"
+              >
+                <Sparkles className="w-3.5 h-3.5" /> + 1-Tap Rich Sample
+              </button>
             </div>
 
-            {showKeySettings && (
-              <form onSubmit={saveCloudKeys} className="p-3.5 rounded-xl bg-slate-50 border space-y-2.5">
-                <input type="text" placeholder="Cloudinary Cloud Name" value={cloudConfig.cloudinaryCloudName} onChange={(e) => setCloudConfig({ ...cloudConfig, cloudinaryCloudName: e.target.value.trim() })} className="w-full border rounded-lg px-2.5 py-1.5 text-xs" />
-                <input type="text" placeholder="Cloudinary Upload Preset" value={cloudConfig.cloudinaryPreset} onChange={(e) => setCloudConfig({ ...cloudConfig, cloudinaryPreset: e.target.value.trim() })} className="w-full border rounded-lg px-2.5 py-1.5 text-xs" />
-                <input type="text" placeholder="Razorpay Key ID (rzp_test_...)" value={cloudConfig.razorpayKeyId} onChange={(e) => setCloudConfig({ ...cloudConfig, razorpayKeyId: e.target.value.trim() })} className="w-full border rounded-lg px-2.5 py-1.5 text-xs" />
-                <button type="submit" className="bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-lg">Save Keys</button>
-              </form>
-            )}
-
             <form onSubmit={handleAddProduct} className="space-y-3">
-              <input type="text" required placeholder={t.prodNamePlaceholder} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full border rounded-xl px-3 py-2.5 text-sm" />
-              <div className="p-3 rounded-xl bg-indigo-50 border space-y-2">
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <label className="cursor-pointer bg-indigo-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5">
-                    <Camera className="w-4 h-4" /> {uploadingImg ? '...' : t.takePhoto}
-                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e.target.files?.[0], 'PRODUCT')} />
-                  </label>
-                  <input type="text" placeholder={t.pasteUrlPlaceholder} value={formData.imageUrl} onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-xs bg-white" />
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input type="text" required placeholder="Product Name *" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
+                <input type="text" placeholder="Brand Name (e.g., ITC, Tata, GSK)" value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full border rounded-xl px-3 py-2.5 text-sm bg-white">
-                  <option value="GENERAL">{t.catGeneral}</option>
-                  <option value="FOOD">{t.catFood}</option>
-                  <option value="MEDICINE">{t.catMedicine}</option>
-                  <option value="ELECTRONICS">{t.catElectronics}</option>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm bg-white">
+                  <option value="GENERAL">GENERAL (Grocery)</option>
+                  <option value="FOOD">FOOD (Restaurant)</option>
+                  <option value="MEDICINE">MEDICINE (Pharmacy)</option>
+                  <option value="ELECTRONICS">ELECTRONICS</option>
                 </select>
-                <input type="number" placeholder={t.stockPlaceholder} value={formData.stock} onChange={(e) => setFormData({ ...formData, stock: e.target.value })} className="w-full border rounded-xl px-3 py-2.5 text-sm" />
+                <input type="text" placeholder="Variants (comma separated: 500g, 1kg, 5kg)" value={formData.variantsText} onChange={(e) => setFormData({ ...formData, variantsText: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
               </div>
+
               <div className="grid grid-cols-2 gap-2">
-                <input type="number" required placeholder={t.retailPricePlaceholder} value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} className="w-full border rounded-xl px-3 py-2.5 text-sm" />
-                <input type="number" placeholder={t.wholesalePricePlaceholder} value={formData.wholesalePrice} onChange={(e) => setFormData({ ...formData, wholesalePrice: e.target.value })} className="w-full border rounded-xl px-3 py-2.5 text-sm" />
+                <input type="number" required placeholder="Retail Price (₹) *" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
+                <input type="number" placeholder="Wholesale Price (₹)" value={formData.wholesalePrice} onChange={(e) => setFormData({ ...formData, wholesalePrice: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
               </div>
-              {formData.category === 'MEDICINE' && (
-                <label className="flex items-center gap-2 bg-rose-50 border p-3 rounded-xl text-xs font-semibold text-rose-900">
-                  <input type="checkbox" checked={formData.requiresPrescription} onChange={(e) => setFormData({ ...formData, requiresPrescription: e.target.checked })} className="w-4 h-4" />
-                  {t.rxCheckbox}
+
+              <textarea placeholder="Product Description & Highlights..." value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-xs h-16" />
+
+              <div className="p-3 rounded-xl bg-indigo-50 border flex flex-col sm:flex-row gap-2">
+                <label className="cursor-pointer bg-indigo-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shrink-0">
+                  <Camera className="w-4 h-4" /> Take / Upload Photo
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e.target.files?.[0], 'PRODUCT')} />
                 </label>
-              )}
-              <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl">{t.saveProductBtn}</button>
+                <input type="text" placeholder="Or paste image URL..." value={formData.imageUrl} onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-xs bg-white" />
+              </div>
+
+              <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl">
+                Save Rich Product to Database
+              </button>
             </form>
           </div>
         )}
