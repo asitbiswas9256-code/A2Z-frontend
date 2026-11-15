@@ -5,10 +5,13 @@ import {
   ShoppingBag, Truck, ShieldAlert, Package, CheckCircle2, 
   RefreshCw, Sparkles, Trash2, User, LogOut, MapPin, 
   ClipboardList, Bike, Camera, CreditCard, Banknote, 
-  Settings, Search, ServerCrash, Server, Languages, Download, X
+  Settings, Search, ServerCrash, Server, Languages, Download, X, Navigation
 } from 'lucide-react';
 
 const API_URL = 'https://a2z-backend-tgls.onrender.com/api';
+
+// Central Store Hub Coordinates (Karimpur / Nadia Hub)
+const STORE_HUB = { lat: 23.9785, lng: 88.6142 };
 
 const DICTIONARY = {
   EN: {
@@ -48,8 +51,11 @@ const DICTIONARY = {
     rxMandatory: '🩺 Doctor Prescription Required for Medicine *',
     uploadRx: 'Upload Rx Photo',
     rxPlaceholder: 'Or enter Doctor Rx ID...',
-    addressLabel: '📍 Delivery Address (20–30km Zone) *',
+    addressLabel: '📍 Delivery Address & GPS Location (20–30km Zone) *',
     addressPlaceholder: 'Enter village/town, landmark, and pin code...',
+    detectGps: 'Detect My GPS Location',
+    gpsSuccess: 'GPS Verified! Distance from store:',
+    gpsOutRange: '❌ Sorry! You are outside our 30km delivery zone.',
     paymentLabel: '💳 Select Payment Method',
     payRazorpay: 'Razorpay (UPI/Card)',
     payCod: 'Cash on Delivery',
@@ -120,8 +126,11 @@ const DICTIONARY = {
     rxMandatory: '🩺 ওষুধের জন্য ডাক্তারের প্রেসক্রিপশন আবশ্যক *',
     uploadRx: 'প্রেসক্রিপশন ছবি তুলুন',
     rxPlaceholder: 'অথবা প্রেসক্রিপশন আইডি লিখুন...',
-    addressLabel: '📍 ডেলিভারি ঠিকানা (২০–৩০ কিমি এলাকা) *',
+    addressLabel: '📍 ডেলিভারি ঠিকানা ও জিপিএস লোকেশন (২০–৩০ কিমি এলাকা) *',
     addressPlaceholder: 'গ্রাম/শহর, ল্যান্ডমার্ক এবং পিন কোড লিখুন...',
+    detectGps: 'আমার জিপিএস লোকেশন নিন',
+    gpsSuccess: 'জিপিএস ভেরিফাই হয়েছে! দোকান থেকে দূরত্ব:',
+    gpsOutRange: '❌ দুঃখিত! আপনি আমাদের ৩০ কিমি ডেলিভারি সীমার বাইরে আছেন।',
     paymentLabel: '💳 পেমেন্ট পদ্ধতি বেছে নিন',
     payRazorpay: 'অনলাইন পেমেন্ট (UPI/Card)',
     payCod: 'ক্যাশ অন ডেলিভারি (COD)',
@@ -163,10 +172,12 @@ export default function SuperAppHome() {
   const [statusMsg, setStatusMsg] = useState('');
   const [lang, setLang] = useState('EN');
 
-  // PWA Install States
+  // PWA & GPS States
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallBanner, setShowInstallBanner] = useState(true);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [userLocation, setUserLocation] = useState(null); // { lat, lng, distanceKm }
+  const [locatingGps, setLocatingGps] = useState(false);
 
   // Search, Sort & Server Wake-Up States
   const [searchQuery, setSearchQuery] = useState('');
@@ -210,20 +221,61 @@ export default function SuperAppHome() {
 
   const t = DICTIONARY[lang];
 
-  // Register Service Worker, Listen for Android Install Prompt & Load Saved State
+  // Haversine formula to calculate distance in KM between two lat/lng points
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in km
+  };
+
+  const handleDetectGPS = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      return;
+    }
+    setLocatingGps(true);
+    setStatusMsg('🛰️ Fetching your GPS coordinates...');
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const dist = calculateDistance(STORE_HUB.lat, STORE_HUB.lng, lat, lng);
+        const roundedDist = Math.round(dist * 10) / 10;
+
+        setUserLocation({ lat, lng, distanceKm: roundedDist });
+        setLocatingGps(false);
+
+        if (roundedDist > 30) {
+          setStatusMsg(`❌ ${t.gpsOutRange} (${roundedDist} km away)`);
+        } else {
+          setStatusMsg(`✅ ${t.gpsSuccess} ${roundedDist} km`);
+        }
+      },
+      (error) => {
+        setLocatingGps(false);
+        setStatusMsg('❌ Unable to retrieve your GPS location. Please type address manually.');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // Register PWA Service Worker
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch((err) => console.error('SW Error:', err));
       }
 
-      // Check if already installed as standalone app
       if (window.matchMedia('(display-mode: standalone)').matches) {
         setIsStandalone(true);
       }
 
-      // Capture native Android Chrome install prompt
       const handleBeforeInstallPrompt = (e) => {
         e.preventDefault();
         setDeferredPrompt(e);
@@ -285,9 +337,7 @@ export default function SuperAppHome() {
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setShowInstallBanner(false);
-      }
+      if (outcome === 'accepted') setShowInstallBanner(false);
       setDeferredPrompt(null);
     } else {
       alert(t.installGuide);
@@ -477,7 +527,7 @@ export default function SuperAppHome() {
           price: item.finalPrice
         })),
         totalAmount: cartTotal,
-        deliveryAddress: `${deliveryAddress} [${paymentLabel}]`,
+        deliveryAddress: `${deliveryAddress} [GPS: ${userLocation ? userLocation.distanceKm + 'km' : 'Manual'} | ${paymentLabel}]`,
         prescriptionUrl: prescriptionUrl || undefined,
         deliveryType: hasFood && hasNonFood ? 'SPLIT_FLEET' : hasFood ? 'IMMEDIATE_FOOD' : 'STANDARD_20_30KM',
         status: 'PENDING'
@@ -513,7 +563,11 @@ export default function SuperAppHome() {
       return;
     }
     if (!deliveryAddress.trim()) {
-      alert('Please enter your delivery address (within 20–30km radius)!');
+      alert('Please enter your delivery address!');
+      return;
+    }
+    if (userLocation && userLocation.distanceKm > 30) {
+      alert('Cannot checkout: You are outside the 30km hyper-local delivery radius!');
       return;
     }
 
@@ -925,7 +979,7 @@ export default function SuperAppHome() {
               </div>
             )}
 
-            {/* Smart Cart Box */}
+            {/* Smart Cart Box with GPS Pinning */}
             {cart.length > 0 && (
               <div className="mt-6 bg-white rounded-2xl border-2 border-indigo-600 p-4 shadow-lg">
                 <h3 className="font-extrabold text-slate-900 text-sm mb-2 flex items-center justify-between">
@@ -964,10 +1018,22 @@ export default function SuperAppHome() {
                   </div>
                 )}
 
-                <div className="mb-3">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    {t.addressLabel}
-                  </label>
+                {/* Delivery Address & GPS Pinning */}
+                <div className="mb-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700">
+                      {t.addressLabel}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleDetectGPS}
+                      className="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-extrabold px-2.5 py-1 rounded-lg flex items-center gap-1 border border-indigo-200"
+                    >
+                      <Navigation className="w-3 h-3 text-indigo-600" />
+                      {locatingGps ? 'Locating...' : t.detectGps}
+                    </button>
+                  </div>
+
                   <input
                     type="text"
                     placeholder={t.addressPlaceholder}
@@ -975,6 +1041,15 @@ export default function SuperAppHome() {
                     onChange={(e) => setDeliveryAddress(e.target.value)}
                     className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs"
                   />
+
+                  {userLocation && (
+                    <div className={`p-2 rounded-lg text-xs font-bold flex items-center justify-between ${
+                      userLocation.distanceKm <= 30 ? 'bg-emerald-50 text-emerald-900 border border-emerald-200' : 'bg-rose-50 text-rose-900 border border-rose-200'
+                    }`}>
+                      <span>📍 GPS Verified: {userLocation.distanceKm} km from hub</span>
+                      <span>{userLocation.distanceKm <= 30 ? '✅ Within Zone' : '❌ Out of Zone (>30km)'}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mb-3">
