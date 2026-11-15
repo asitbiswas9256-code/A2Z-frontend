@@ -6,10 +6,14 @@ import {
   RefreshCw, Sparkles, Trash2, User, LogOut, MapPin, 
   ClipboardList, Bike, Camera, CreditCard, Banknote, 
   Settings, Search, ServerCrash, Server, Languages, 
-  Download, X, Star, Flame, Clock, Store, Tag, ChevronRight, Heart
+  Download, X, Flame, Clock, Store, Heart, FileText, 
+  RotateCcw, Ban, Navigation, BarChart3, Bookmark
 } from 'lucide-react';
 
 const API_URL = 'https://a2z-backend-tgls.onrender.com/api';
+
+// Central Hub Coordinates (Karimpur, Nadia, West Bengal) for 20-30km Radius Check
+const HUB_COORDS = { lat: 23.9715, lng: 88.6265, name: 'Karimpur Central Hub' };
 
 const NEARBY_STORES = [
   { id: 's1', name: 'Biswas Agro & Grocery Hub', category: 'GENERAL', dist: '2.4 km', rating: 4.8, tag: 'Wholesale & Retail' },
@@ -38,7 +42,7 @@ const PROMO_BANNERS = [
 ];
 
 export default function SuperAppHome() {
-  const [viewMode, setViewMode] = useState('STORE');
+  const [viewMode, setViewMode] = useState('STORE'); // STORE | ORDERS | WISHLIST | ADMIN | ACCOUNT
   const [activeTab, setActiveTab] = useState('ALL');
   const [selectedStoreFilter, setSelectedStoreFilter] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
@@ -50,7 +54,7 @@ export default function SuperAppHome() {
   const [sortOption, setSortOption] = useState('NEWEST');
   const [serverStatus, setServerStatus] = useState('IDLE');
 
-  // Product Detail Modal & Recently Viewed
+  // Product Detail Modal, Wishlist, Save for Later & Recently Viewed
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState('');
   const [detailQty, setDetailQty] = useState(1);
@@ -58,11 +62,14 @@ export default function SuperAppHome() {
   const [reviewInput, setReviewInput] = useState({ rating: 5, comment: '' });
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [wishlist, setWishlist] = useState([]);
+  const [savedForLater, setSavedForLater] = useState([]);
 
-  // PWA Install States
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showInstallBanner, setShowInstallBanner] = useState(true);
-  const [isStandalone, setIsStandalone] = useState(false);
+  // GST Invoice Modal State
+  const [invoiceOrder, setInvoiceOrder] = useState(null);
+
+  // GPS Radius Geofencing State
+  const [gpsInfo, setGpsInfo] = useState(null); // { distKm, withinZone, coordsText }
+  const [gpsLoading, setGpsLoading] = useState(false);
 
   // Data States
   const [products, setProducts] = useState([]);
@@ -117,6 +124,7 @@ export default function SuperAppHome() {
       subtitle: '20–30km Hyper-Local Wholesale & Retail Super App',
       store: 'Store',
       orders: 'Orders',
+      wishlist: 'Wishlist',
       admin: '+ Admin',
       login: 'Login',
       wholesaleActive: '📦 B2B Wholesale Tiered Pricing Active',
@@ -127,13 +135,13 @@ export default function SuperAppHome() {
       nearbyStores: 'Popular Nearby Stores (20–30km)',
       trendingTitle: 'Trending & Recommended',
       recentlyViewedTitle: 'Recently Viewed Products',
-      allProductsTitle: 'Explore Catalogue',
       clearFilter: 'Show All Stores'
     },
     BN: {
       subtitle: '২০–৩০ কিমি হাইপার-লোকাল হোলসেল ও রিটেল সুপার অ্যাপ',
       store: 'দোকান',
       orders: 'অর্ডার',
+      wishlist: 'উইশলিস্ট',
       admin: '+ অ্যাডমিন',
       login: 'লগইন',
       wholesaleActive: '📦 পাইকারি (B2B) রেট চালু আছে',
@@ -144,7 +152,6 @@ export default function SuperAppHome() {
       nearbyStores: 'কাছাকাছি জনপ্রিয় দোকান (২০–৩০ কিমি)',
       trendingTitle: 'ট্রেন্ডিং ও সেরা পণ্য',
       recentlyViewedTitle: 'সম্প্রতি দেখা পণ্য',
-      allProductsTitle: 'সমস্ত পণ্যের তালিকা',
       clearFilter: 'সব দোকান দেখুন'
     }
   }[lang];
@@ -154,15 +161,6 @@ export default function SuperAppHome() {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch(() => {});
       }
-      if (window.matchMedia('(display-mode: standalone)').matches) {
-        setIsStandalone(true);
-      }
-      const handleBeforeInstallPrompt = (e) => {
-        e.preventDefault();
-        setDeferredPrompt(e);
-      };
-      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
       try {
         const savedLang = localStorage.getItem('a2z_lang');
         if (savedLang === 'BN' || savedLang === 'EN') setLang(savedLang);
@@ -189,21 +187,23 @@ export default function SuperAppHome() {
         const savedRecent = localStorage.getItem('a2z_recent_products');
         if (savedRecent) setRecentlyViewed(JSON.parse(savedRecent));
 
+        const savedWish = localStorage.getItem('a2z_wishlist');
+        if (savedWish) setWishlist(JSON.parse(savedWish));
+
+        const savedLater = localStorage.getItem('a2z_saved_later');
+        if (savedLater) setSavedForLater(JSON.parse(savedLater));
+
         const savedCart = localStorage.getItem('a2z_cart_cache');
         if (savedCart) setCart(JSON.parse(savedCart));
       } catch (e) {}
 
       fetchProducts();
       fetchOrders();
-
-      return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     }
   }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('a2z_cart_cache', JSON.stringify(cart));
-    } catch (e) {}
+    try { localStorage.setItem('a2z_cart_cache', JSON.stringify(cart)); } catch (e) {}
   }, [cart]);
 
   const toggleLanguage = () => {
@@ -243,7 +243,88 @@ export default function SuperAppHome() {
     }
   };
 
-  // Open Advanced Product Detail Modal & Track Recently Viewed
+  // Haversine Distance Calculator for 20-30km GPS Radius Validation
+  const detectGpsRadius = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      return;
+    }
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const R = 6371; // Earth radius in km
+        const dLat = ((latitude - HUB_COORDS.lat) * Math.PI) / 180;
+        const dLon = ((longitude - HUB_COORDS.lng) * Math.PI) / 180;
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos((HUB_COORDS.lat * Math.PI) / 180) *
+            Math.cos((latitude * Math.PI) / 180) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distanceKm = Number((R * c).toFixed(1));
+        const withinZone = distanceKm <= 30;
+
+        setGpsInfo({
+          distKm: distanceKm,
+          withinZone,
+          coordsText: `${latitude.toFixed(4)}°N, ${longitude.toFixed(4)}°E`
+        });
+        setDeliveryAddress(
+          `GPS Pin (${latitude.toFixed(4)}, ${longitude.toFixed(4)}) • ${distanceKm} km from ${HUB_COORDS.name}`
+        );
+        setGpsLoading(false);
+        setStatusMsg(
+          withinZone
+            ? `✅ GPS Verified! You are ${distanceKm} km away (Inside 30km Hyper-Local Zone).`
+            : `⚠️ You are ${distanceKm} km from ${HUB_COORDS.name} (Outside standard 30km radius, regional shipping applies).`
+        );
+      },
+      () => {
+        setGpsLoading(false);
+        setStatusMsg('⚠️ Could not access GPS. Please allow location permission or type address manually.');
+      }
+    );
+  };
+
+  // Wishlist Toggle
+  const toggleWishlist = (product) => {
+    setWishlist((prev) => {
+      const exists = prev.some((p) => p._id === product._id);
+      const updated = exists ? prev.filter((p) => p._id !== product._id) : [product, ...prev];
+      try { localStorage.setItem('a2z_wishlist', JSON.stringify(updated)); } catch (e) {}
+      setStatusMsg(exists ? `Removed ${product.name} from Wishlist` : `❤️ Saved ${product.name} to Wishlist!`);
+      return updated;
+    });
+  };
+
+  // Save for Later inside Cart
+  const moveToSavedForLater = (idx) => {
+    const item = cart[idx];
+    if (!item) return;
+    setSavedForLater((prev) => {
+      const updated = [item, ...prev];
+      try { localStorage.setItem('a2z_saved_later', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+    setCart((prev) => prev.filter((_, i) => i !== idx));
+    setStatusMsg(`📌 Saved "${item.name}" for later!`);
+  };
+
+  const moveBackToCart = (idx) => {
+    const item = savedForLater[idx];
+    if (!item) return;
+    setCart((prev) => [...prev, item]);
+    setSavedForLater((prev) => {
+      const updated = prev.filter((_, i) => i !== idx);
+      try { localStorage.setItem('a2z_saved_later', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+    setStatusMsg(`🛒 Moved "${item.name}" back to active cart!`);
+  };
+
+  // Open Product Detail Modal
   const openProductModal = (product) => {
     const variantsList = Array.isArray(product.variants) && product.variants.length > 0
       ? product.variants
@@ -268,9 +349,9 @@ export default function SuperAppHome() {
     const minMoq = Number(product.minWholesaleQty || 5);
 
     if (!isWholesale && qty < minMoq) return retail;
-    if (qty >= 50) return Math.round(baseWholesale * 0.88); // 50+ Bulk Distributor Slab
-    if (qty >= 20) return Math.round(baseWholesale * 0.94); // 20-49 Mid-Wholesale Slab
-    if (qty >= minMoq || isWholesale) return baseWholesale; // 5-19 Standard B2B Slab
+    if (qty >= 50) return Math.round(baseWholesale * 0.88);
+    if (qty >= 20) return Math.round(baseWholesale * 0.94);
+    if (qty >= minMoq || isWholesale) return baseWholesale;
     return retail;
   };
 
@@ -290,6 +371,23 @@ export default function SuperAppHome() {
     ]);
     setStatusMsg(`🛒 Added ${product.name} (${variantLabel} × ${qtyToAdd}) @ ₹${unitPrice}/unit`);
     if (selectedProduct) setSelectedProduct(null);
+  };
+
+  // 1-Click Repeat Previous Order
+  const handleRepeatOrder = (order) => {
+    if (!order.items || order.items.length === 0) return;
+    const restoredItems = order.items.map((item) => {
+      const prodObj = item.product && typeof item.product === 'object' ? item.product : { _id: item.product, name: 'Previous Order Item', price: item.price };
+      return {
+        ...prodObj,
+        qty: item.quantity || 1,
+        finalPrice: item.price || prodObj.price || 100,
+        selectedVariant: 'Reorder Pack'
+      };
+    });
+    setCart(restoredItems);
+    setViewMode('STORE');
+    setStatusMsg('🔁 Previous order items loaded into your Smart Cart!');
   };
 
   const updateCartQty = (idx, delta) => {
@@ -321,7 +419,6 @@ export default function SuperAppHome() {
     }
   };
 
-  // Add Customer Review Inside Product Modal
   const handleAddReview = (e) => {
     e.preventDefault();
     if (!reviewInput.comment.trim() || !selectedProduct) return;
@@ -395,7 +492,6 @@ export default function SuperAppHome() {
     }
   };
 
-  // Rich Sample Catalogue Seeder
   const handleQuickDemoProduct = async () => {
     setStatusMsg('Adding rich sample product to MongoDB...');
     const samples = [
@@ -624,7 +720,7 @@ export default function SuperAppHome() {
       return;
     }
     if (!deliveryAddress.trim()) {
-      alert('Please enter your delivery address (within 20–30km radius)!');
+      alert('Please enter your delivery address or tap GPS Pin (20–30km radius)!');
       return;
     }
     if (paymentMethod === 'COD') {
@@ -659,7 +755,7 @@ export default function SuperAppHome() {
         body: JSON.stringify({ status: newStatus })
       });
       if (res.ok) {
-        setStatusMsg(`✅ Order marked as ${newStatus}!`);
+        setStatusMsg(`✅ Order status updated to ${newStatus}!`);
         fetchOrders();
       }
     } catch (err) {}
@@ -700,10 +796,16 @@ export default function SuperAppHome() {
   const deliveryFee = cartSubtotal > 999 || cartSubtotal === 0 ? 0 : 25;
   const finalPayableTotal = Math.max(0, cartSubtotal + deliveryFee - discountAmount);
 
+  // Admin Revenue & Low Stock Metrics
+  const totalRevenue = orders
+    .filter((o) => o.status !== 'CANCELLED')
+    .reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
+  const lowStockProducts = products.filter((p) => Number(p.stock || 100) < 20);
+
   return (
     <div className="min-h-screen pb-28 bg-slate-50">
       {/* Top Sticky Header */}
-      <header className="bg-indigo-700 text-white sticky top-0 z-30 shadow-md">
+      <header className="bg-indigo-700 text-white sticky top-0 z-30 shadow-md print:hidden">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <div onClick={() => { setViewMode('STORE'); setSelectedStoreFilter(''); }} className="cursor-pointer">
             <div className="flex items-center gap-2">
@@ -729,6 +831,14 @@ export default function SuperAppHome() {
               }`}
             >
               {t.store}
+            </button>
+            <button
+              onClick={() => setViewMode('WISHLIST')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 ${
+                viewMode === 'WISHLIST' ? 'bg-white text-rose-600' : 'bg-indigo-600 text-indigo-100'
+              }`}
+            >
+              <Heart className="w-3.5 h-3.5" /> ({wishlist.length})
             </button>
             <button
               onClick={() => { fetchOrders(); setViewMode('ORDERS'); }}
@@ -778,15 +888,15 @@ export default function SuperAppHome() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 pt-4">
+      <main className="max-w-5xl mx-auto px-4 pt-4 print:p-0">
         {statusMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-950 text-xs sm:text-sm font-medium flex items-center justify-between shadow-sm">
+          <div className="mb-4 p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-950 text-xs sm:text-sm font-medium flex items-center justify-between shadow-sm print:hidden">
             <span>{statusMsg}</span>
             <button onClick={() => setStatusMsg('')} className="text-xs font-bold underline ml-2">OK</button>
           </div>
         )}
 
-        {/* ==================== 1. PROFESSIONAL STOREFRONT ==================== */}
+        {/* ==================== 1. STOREFRONT VIEW ==================== */}
         {viewMode === 'STORE' && (
           <>
             {/* Search Bar with Live Auto-Suggestions Dropdown */}
@@ -812,7 +922,6 @@ export default function SuperAppHome() {
                     </button>
                   )}
 
-                  {/* Auto-Suggestions Dropdown */}
                   {showSuggestions && searchSuggestions.length > 0 && (
                     <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-slate-200 z-40 overflow-hidden">
                       <div className="px-3 py-1.5 bg-slate-50 text-[10px] font-bold uppercase text-slate-500">
@@ -848,7 +957,7 @@ export default function SuperAppHome() {
                 </select>
               </div>
 
-              {/* Featured Category Pills */}
+              {/* Category Pills */}
               <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                 {[
                   { id: 'ALL', label: '🔥 All Categories' },
@@ -903,7 +1012,7 @@ export default function SuperAppHome() {
               ))}
             </div>
 
-            {/* Popular Nearby Stores (20-30km Discovery) */}
+            {/* Nearby Stores Discovery */}
             <div className="mb-5">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
@@ -943,7 +1052,7 @@ export default function SuperAppHome() {
               </div>
             </div>
 
-            {/* Product Grid */}
+            {/* Product Grid Header */}
             <div className="flex items-center justify-between mb-2.5">
               <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
                 <Flame className="w-4 h-4 text-amber-500" /> {t.trendingTitle} ({processedProducts.length})
@@ -965,12 +1074,9 @@ export default function SuperAppHome() {
               <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center my-4">
                 <Package className="w-10 h-10 text-indigo-500 mx-auto mb-2" />
                 <h3 className="font-bold text-slate-800">No Matching Products</h3>
-                <p className="text-xs text-slate-500 mt-1 mb-4">
-                  Tap below to populate a rich product with variants, specs & wholesale slabs.
-                </p>
                 <button
                   onClick={handleQuickDemoProduct}
-                  className="bg-indigo-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl inline-flex items-center gap-1.5"
+                  className="mt-3 bg-indigo-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl inline-flex items-center gap-1.5"
                 >
                   <Sparkles className="w-4 h-4" /> Add Rich Demo Product
                 </button>
@@ -983,6 +1089,7 @@ export default function SuperAppHome() {
                     : product.price;
                   const retailMrp = product.mrp || Math.round(product.price * 1.18);
                   const discountPct = Math.max(5, Math.round(((retailMrp - displayPrice) / retailMrp) * 100));
+                  const isWishlisted = wishlist.some((w) => w._id === product._id);
 
                   return (
                     <div
@@ -990,25 +1097,31 @@ export default function SuperAppHome() {
                       className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between"
                     >
                       <div>
-                        {/* Clickable Image Opens Full Product Detail Modal */}
-                        <div
-                          onClick={() => openProductModal(product)}
-                          className="h-44 w-full bg-slate-100 relative cursor-pointer overflow-hidden group"
-                        >
-                          {product.imageUrl ? (
-                            <img
-                              src={product.imageUrl}
-                              alt={product.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
-                              Tap for Product Specs & Slabs
-                            </div>
-                          )}
+                        <div className="h-44 w-full bg-slate-100 relative overflow-hidden group">
+                          <div onClick={() => openProductModal(product)} className="w-full h-full cursor-pointer">
+                            {product.imageUrl ? (
+                              <img
+                                src={product.imageUrl}
+                                alt={product.name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
+                                Tap for Product Specs & Slabs
+                              </div>
+                            )}
+                          </div>
                           <span className="absolute top-2.5 left-2.5 bg-emerald-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-md shadow">
                             {discountPct}% OFF
                           </span>
+                          <button
+                            onClick={() => toggleWishlist(product)}
+                            className={`absolute top-2.5 right-2.5 p-1.5 rounded-full shadow ${
+                              isWishlisted ? 'bg-rose-600 text-white' : 'bg-white/90 text-slate-700'
+                            }`}
+                          >
+                            <Heart className="w-3.5 h-3.5" />
+                          </button>
                           <span className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
                             ★ {product.rating || 4.7} ({product.reviewsCount || 24})
                           </span>
@@ -1074,7 +1187,7 @@ export default function SuperAppHome() {
               </div>
             )}
 
-            {/* Recently Viewed Products Carousel */}
+            {/* Recently Viewed Products */}
             {recentlyViewed.length > 0 && (
               <div className="mt-7 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
                 <h3 className="text-xs sm:text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-1.5">
@@ -1102,7 +1215,29 @@ export default function SuperAppHome() {
               </div>
             )}
 
-            {/* ==================== SMART CART & COUPON CHECKOUT ==================== */}
+            {/* Saved For Later Box */}
+            {savedForLater.length > 0 && (
+              <div className="mt-5 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 className="text-xs font-extrabold text-slate-800 mb-2 flex items-center gap-1.5">
+                  <Bookmark className="w-4 h-4 text-amber-600" /> Saved For Later ({savedForLater.length})
+                </h3>
+                <div className="space-y-2">
+                  {savedForLater.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-xl">
+                      <span className="font-bold">{item.name} (₹{item.finalPrice})</span>
+                      <button
+                        onClick={() => moveBackToCart(idx)}
+                        className="bg-indigo-600 text-white font-bold px-3 py-1 rounded-lg"
+                      >
+                        Move to Cart
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ==================== SMART CART & GPS GEOFENCED CHECKOUT ==================== */}
             {cart.length > 0 && (
               <div className="mt-6 bg-white rounded-2xl border-2 border-indigo-600 p-4 shadow-lg">
                 <h3 className="font-extrabold text-slate-900 text-sm mb-3 flex items-center justify-between">
@@ -1110,8 +1245,7 @@ export default function SuperAppHome() {
                   <span className="text-indigo-700 text-base">Payable: ₹{finalPayableTotal}</span>
                 </h3>
 
-                {/* Cart Items with +/- Quantity & Dynamic Wholesale Slab Updates */}
-                <div className="space-y-2 max-h-52 overflow-y-auto mb-3">
+                <div className="space-y-2 max-h-56 overflow-y-auto mb-3">
                   {cart.map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                       <div>
@@ -1121,6 +1255,12 @@ export default function SuperAppHome() {
                         <div className="text-[11px] text-slate-500">
                           Unit Rate: ₹{item.finalPrice} × {item.qty} = <strong>₹{item.finalPrice * item.qty}</strong>
                         </div>
+                        <button
+                          onClick={() => moveToSavedForLater(idx)}
+                          className="text-[10px] font-bold text-indigo-600 underline mt-0.5"
+                        >
+                          Save for Later
+                        </button>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <button
@@ -1183,10 +1323,21 @@ export default function SuperAppHome() {
                   </div>
                 )}
 
-                <div className="mb-3">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    📍 Delivery Address (20–30km Zone) *
-                  </label>
+                {/* GPS Location Pinning & 20-30km Radius Validation */}
+                <div className="mb-3 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700">
+                      📍 Delivery Address & 20–30km Zone Check *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={detectGpsRadius}
+                      className="text-[11px] bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-extrabold px-2.5 py-1 rounded-lg flex items-center gap-1"
+                    >
+                      <Navigation className="w-3 h-3" />
+                      {gpsLoading ? 'Detecting GPS...' : 'Auto-Detect GPS (20–30km)'}
+                    </button>
+                  </div>
                   <input
                     type="text"
                     placeholder="Enter village/town, landmark, and pin code..."
@@ -1194,11 +1345,20 @@ export default function SuperAppHome() {
                     onChange={(e) => setDeliveryAddress(e.target.value)}
                     className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs"
                   />
+                  {gpsInfo && (
+                    <div
+                      className={`text-[11px] font-bold px-2.5 py-1.5 rounded-lg ${
+                        gpsInfo.withinZone ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'
+                      }`}
+                    >
+                      📡 Distance from {HUB_COORDS.name}: <strong>{gpsInfo.distKm} km</strong> ({gpsInfo.coordsText})
+                    </div>
+                  )}
                 </div>
 
                 {/* Bill Breakdown */}
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1 mb-3">
-                  <div className="flex justify-between"><span>Items Subtotal:</span><span>₹{cartSubtotal}</span></div>
+                  <div className="flex justify-between"><span>Items Subtotal (Incl. GST):</span><span>₹{cartSubtotal}</span></div>
                   <div className="flex justify-between"><span>Delivery Fee (Free above ₹999):</span><span>{deliveryFee === 0 ? 'FREE' : `₹${deliveryFee}`}</span></div>
                   {discountAmount > 0 && (
                     <div className="flex justify-between text-emerald-700 font-bold">
@@ -1243,7 +1403,305 @@ export default function SuperAppHome() {
           </>
         )}
 
-        {/* ==================== 2. ADVANCED PRODUCT DETAIL DRAWER / MODAL ==================== */}
+        {/* ==================== 2. WISHLIST VIEW ==================== */}
+        {viewMode === 'WISHLIST' && (
+          <div className="bg-white rounded-2xl p-5 border border-slate-200 space-y-4">
+            <h2 className="text-base font-extrabold flex items-center gap-2">
+              <Heart className="w-5 h-5 text-rose-600" /> Saved Wishlist ({wishlist.length})
+            </h2>
+            {wishlist.length === 0 ? (
+              <p className="text-xs text-slate-500 py-8 text-center">
+                Tap the heart icon on any product to save it to your wishlist.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {wishlist.map((item) => (
+                  <div key={item._id} className="p-3 rounded-xl border flex items-center justify-between gap-3">
+                    <div>
+                      <div className="font-bold text-sm">{item.name}</div>
+                      <div className="text-xs font-extrabold text-indigo-700">₹{item.price}</div>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => addToCart(item)}
+                        className="bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg"
+                      >
+                        + Cart
+                      </button>
+                      <button
+                        onClick={() => toggleWishlist(item)}
+                        className="bg-rose-50 text-rose-600 text-xs font-bold px-2.5 py-1.5 rounded-lg"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ==================== 3. ORDERS, CANCELLATION, RETURNS & GST INVOICE VIEW ==================== */}
+        {viewMode === 'ORDERS' && (
+          <div className="space-y-3">
+            <div className="bg-white rounded-2xl p-4 border flex items-center justify-between">
+              <h2 className="text-base font-extrabold flex items-center gap-1.5">
+                <ClipboardList className="w-5 h-5 text-indigo-600" /> Order Management & Tracking ({orders.length})
+              </h2>
+              <button onClick={fetchOrders} className="bg-slate-100 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1">
+                <RefreshCw className="w-3.5 h-3.5" /> Refresh
+              </button>
+            </div>
+
+            {orders.length === 0 ? (
+              <div className="bg-white rounded-2xl border p-8 text-center text-sm text-slate-500">
+                No orders placed yet.
+              </div>
+            ) : (
+              orders.map((order) => (
+                <div key={order._id} className="bg-white rounded-2xl p-4 border shadow-sm space-y-3">
+                  <div className="flex justify-between border-b pb-2.5">
+                    <div>
+                      <span
+                        className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded ${
+                          order.status === 'CANCELLED' || order.status === 'RETURN_REQUESTED'
+                            ? 'bg-rose-100 text-rose-800'
+                            : 'bg-indigo-100 text-indigo-800'
+                        }`}
+                      >
+                        {order.status || 'PENDING'}
+                      </span>
+                      <h3 className="font-bold text-sm mt-1">
+                        Customer: {order.customer?.name || 'Verified Buyer'}
+                      </h3>
+                      <p className="text-xs text-slate-500">{order.deliveryAddress}</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-base font-extrabold text-indigo-700">₹{order.totalAmount}</div>
+                      <div className="text-[10px] text-slate-400">#{order._id?.slice(-6)}</div>
+                    </div>
+                  </div>
+
+                  {/* Customer Self-Service Actions: Repeat Order, GST Invoice, Cancel, Return */}
+                  <div className="flex flex-wrap gap-2 pt-1 border-b pb-3">
+                    <button
+                      onClick={() => setInvoiceOrder(order)}
+                      className="bg-indigo-50 hover:bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1"
+                    >
+                      <FileText className="w-3.5 h-3.5" /> Download GST Invoice
+                    </button>
+                    <button
+                      onClick={() => handleRepeatOrder(order)}
+                      className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" /> 1-Click Repeat Order
+                    </button>
+                    {order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && (
+                      <button
+                        onClick={() => handleUpdateOrderStatus(order._id, 'CANCELLED')}
+                        className="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1"
+                      >
+                        <Ban className="w-3.5 h-3.5" /> Cancel Order
+                      </button>
+                    )}
+                    {order.status === 'DELIVERED' && (
+                      <button
+                        onClick={() => handleUpdateOrderStatus(order._id, 'RETURN_REQUESTED')}
+                        className="bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" /> Request Return / Refund
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Delivery Partner / Admin Status Controls */}
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[11px] text-slate-500 font-semibold">
+                      Fleet Dispatch Status Controls:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['CONFIRMED', 'OUT_FOR_DELIVERY', 'DELIVERED'].map((st) => (
+                        <button
+                          key={st}
+                          onClick={() => handleUpdateOrderStatus(order._id, st)}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${
+                            order.status === st ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          {st.replace(/_/g, ' ')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* ==================== 4. PRINTABLE GST TAX INVOICE MODAL ==================== */}
+        {invoiceOrder && (
+          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl space-y-4">
+              <div className="flex justify-between items-start border-b pb-3">
+                <div>
+                  <div className="text-xs font-extrabold uppercase text-indigo-700">TAX INVOICE (GST COMPLIANT)</div>
+                  <h3 className="text-lg font-extrabold text-slate-900">A2Z Wholesale & Retail Super App</h3>
+                  <p className="text-[11px] text-slate-500">
+                    Karimpur Central Hub, Nadia, West Bengal • GSTIN: 19AABCA2Z001Z5
+                  </p>
+                </div>
+                <button onClick={() => setInvoiceOrder(null)} className="p-1.5 bg-slate-100 rounded-full print:hidden">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-xl">
+                <div>
+                  <div className="text-slate-500">Billed To:</div>
+                  <div className="font-bold">{invoiceOrder.customer?.name || currentUser?.name || 'Customer'}</div>
+                  {currentUser?.gstNumber && (
+                    <div className="text-[11px] font-semibold text-indigo-700">Buyer GSTIN: {currentUser.gstNumber}</div>
+                  )}
+                </div>
+                <div className="text-right">
+                  <div className="text-slate-500">Invoice No:</div>
+                  <div className="font-mono font-bold">INV-{invoiceOrder._id?.slice(-6).toUpperCase()}</div>
+                  <div className="text-[11px] text-slate-500">Status: {invoiceOrder.status}</div>
+                </div>
+              </div>
+
+              <div className="border rounded-xl overflow-hidden text-xs">
+                <div className="bg-slate-100 px-3 py-2 font-bold flex justify-between">
+                  <span>Item Description × Qty</span>
+                  <span>Amount</span>
+                </div>
+                <div className="divide-y p-3 space-y-1.5">
+                  {(invoiceOrder.items || []).map((item, idx) => (
+                    <div key={idx} className="flex justify-between pt-1">
+                      <span>{item.product?.name || 'Catalogue Item'} × {item.quantity || 1}</span>
+                      <span className="font-semibold">₹{(item.price || 100) * (item.quantity || 1)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* CGST + SGST Breakdown */}
+              <div className="bg-indigo-50/60 p-3 rounded-xl text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span>Taxable Value:</span>
+                  <span>₹{Math.round(invoiceOrder.totalAmount * 0.88)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>CGST (6%):</span>
+                  <span>₹{Math.round(invoiceOrder.totalAmount * 0.06)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>SGST (6%):</span>
+                  <span>₹{Math.round(invoiceOrder.totalAmount * 0.06)}</span>
+                </div>
+                <div className="flex justify-between font-extrabold text-sm border-t border-indigo-200 pt-1">
+                  <span>Total Invoice Value:</span>
+                  <span>₹{invoiceOrder.totalAmount}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-2 print:hidden">
+                <button
+                  onClick={() => window.print()}
+                  className="flex-1 bg-indigo-600 text-white font-bold py-2.5 rounded-xl text-xs"
+                >
+                  🖨️ Print / Save PDF Invoice
+                </button>
+                <button
+                  onClick={() => setInvoiceOrder(null)}
+                  className="bg-slate-200 text-slate-800 font-bold px-4 py-2.5 rounded-xl text-xs"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ==================== 5. ADMIN ANALYTICS & PRODUCT DASHBOARD ==================== */}
+        {viewMode === 'ADMIN' && (
+          <div className="space-y-4">
+            {/* Executive Analytics Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-white p-3.5 rounded-2xl border shadow-sm">
+                <div className="text-[11px] font-bold text-slate-500">Total Revenue</div>
+                <div className="text-lg font-extrabold text-indigo-700 mt-0.5">₹{totalRevenue}</div>
+              </div>
+              <div className="bg-white p-3.5 rounded-2xl border shadow-sm">
+                <div className="text-[11px] font-bold text-slate-500">Total Orders</div>
+                <div className="text-lg font-extrabold text-slate-900 mt-0.5">{orders.length}</div>
+              </div>
+              <div className="bg-white p-3.5 rounded-2xl border shadow-sm">
+                <div className="text-[11px] font-bold text-slate-500">Live Products</div>
+                <div className="text-lg font-extrabold text-emerald-700 mt-0.5">{products.length}</div>
+              </div>
+              <div className="bg-white p-3.5 rounded-2xl border shadow-sm">
+                <div className="text-[11px] font-bold text-slate-500">Low-Stock Alerts</div>
+                <div className="text-lg font-extrabold text-rose-600 mt-0.5">{lowStockProducts.length}</div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold flex items-center gap-1.5">
+                  <BarChart3 className="w-5 h-5 text-indigo-600" /> Seller & Catalogue Management
+                </h2>
+                <button
+                  type="button"
+                  onClick={handleQuickDemoProduct}
+                  className="text-xs bg-purple-100 text-purple-800 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> + 1-Tap Rich Sample
+                </button>
+              </div>
+
+              <form onSubmit={handleAddProduct} className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input type="text" required placeholder="Product Name *" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
+                  <input type="text" placeholder="Brand Name (e.g., ITC, Tata, GSK)" value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm bg-white">
+                    <option value="GENERAL">GENERAL (Grocery)</option>
+                    <option value="FOOD">FOOD (Restaurant)</option>
+                    <option value="MEDICINE">MEDICINE (Pharmacy)</option>
+                    <option value="ELECTRONICS">ELECTRONICS</option>
+                  </select>
+                  <input type="text" placeholder="Variants (comma separated: 500g, 1kg, 5kg)" value={formData.variantsText} onChange={(e) => setFormData({ ...formData, variantsText: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="number" required placeholder="Retail Price (₹) *" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
+                  <input type="number" placeholder="Wholesale Price (₹)" value={formData.wholesalePrice} onChange={(e) => setFormData({ ...formData, wholesalePrice: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
+                </div>
+
+                <textarea placeholder="Product Description & Highlights..." value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-xs h-16" />
+
+                <div className="p-3 rounded-xl bg-indigo-50 border flex flex-col sm:flex-row gap-2">
+                  <label className="cursor-pointer bg-indigo-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shrink-0">
+                    <Camera className="w-4 h-4" /> Take / Upload Photo
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e.target.files?.[0], 'PRODUCT')} />
+                  </label>
+                  <input type="text" placeholder="Or paste image URL..." value={formData.imageUrl} onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-xs bg-white" />
+                </div>
+
+                <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl">
+                  Save Product to Database
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ==================== 6. PRODUCT DETAIL DRAWER ==================== */}
         {selectedProduct && (
           <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
             <div className="bg-white w-full max-w-2xl rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto p-5 shadow-2xl space-y-4">
@@ -1259,26 +1717,17 @@ export default function SuperAppHome() {
                     Sold by: <strong>{selectedProduct.shopName || 'A2Z Central Hub'}</strong> • ★ {selectedProduct.rating || 4.7}
                   </p>
                 </div>
-                <button
-                  onClick={() => setSelectedProduct(null)}
-                  className="p-2 rounded-full bg-slate-100 hover:bg-slate-200"
-                >
+                <button onClick={() => setSelectedProduct(null)} className="p-2 rounded-full bg-slate-100">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Image with Tap-to-Zoom */}
               {selectedProduct.imageUrl && (
-                <div
-                  onClick={() => setZoomImg(!zoomImg)}
-                  className="w-full bg-slate-100 rounded-2xl overflow-hidden cursor-zoom-in relative"
-                >
+                <div onClick={() => setZoomImg(!zoomImg)} className="w-full bg-slate-100 rounded-2xl overflow-hidden cursor-zoom-in relative">
                   <img
                     src={selectedProduct.imageUrl}
                     alt={selectedProduct.name}
-                    className={`w-full object-cover transition-transform duration-300 ${
-                      zoomImg ? 'scale-150 h-80' : 'h-56'
-                    }`}
+                    className={`w-full object-cover transition-transform duration-300 ${zoomImg ? 'scale-150 h-80' : 'h-56'}`}
                   />
                   <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded">
                     {zoomImg ? 'Tap to Reset Zoom' : '🔍 Tap Image to Zoom'}
@@ -1286,11 +1735,8 @@ export default function SuperAppHome() {
                 </div>
               )}
 
-              {/* Variant / Pack Size Selector */}
               <div>
-                <label className="block text-xs font-extrabold text-slate-700 mb-1.5">
-                  Select Pack / Variant:
-                </label>
+                <label className="block text-xs font-extrabold text-slate-700 mb-1.5">Select Pack / Variant:</label>
                 <div className="flex flex-wrap gap-2">
                   {(Array.isArray(selectedProduct.variants) && selectedProduct.variants.length > 0
                     ? selectedProduct.variants
@@ -1300,9 +1746,7 @@ export default function SuperAppHome() {
                       key={v}
                       onClick={() => setSelectedVariant(v)}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold border ${
-                        selectedVariant === v
-                          ? 'bg-indigo-600 text-white border-indigo-600'
-                          : 'bg-slate-50 text-slate-700 border-slate-200'
+                        selectedVariant === v ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 text-slate-700'
                       }`}
                     >
                       {v}
@@ -1311,10 +1755,10 @@ export default function SuperAppHome() {
                 </div>
               </div>
 
-              {/* Dynamic Wholesale Quantity Price Slabs Table */}
+              {/* Wholesale Price Slabs */}
               <div className="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-3.5">
                 <div className="text-xs font-extrabold text-indigo-950 mb-2">
-                  📦 Tiered Wholesale & Bulk Price Slabs (Auto-Applies on Quantity):
+                  📦 Tiered Wholesale & Bulk Price Slabs:
                 </div>
                 <div className="grid grid-cols-4 gap-2 text-center text-xs">
                   <div className={`p-2 rounded-xl border ${detailQty < 5 ? 'bg-white border-indigo-600 font-bold' : 'bg-white/60'}`}>
@@ -1342,101 +1786,30 @@ export default function SuperAppHome() {
                 </div>
               </div>
 
-              {/* Quantity Picker + Add to Cart */}
               <div className="flex items-center justify-between bg-slate-100 p-3 rounded-2xl">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-slate-700">Quantity:</span>
-                  <button
-                    onClick={() => setDetailQty(Math.max(1, detailQty - 1))}
-                    className="w-8 h-8 rounded-xl bg-white font-extrabold border"
-                  >
-                    -
-                  </button>
+                  <button onClick={() => setDetailQty(Math.max(1, detailQty - 1))} className="w-8 h-8 rounded-xl bg-white font-extrabold border">-</button>
                   <input
                     type="number"
                     value={detailQty}
                     onChange={(e) => setDetailQty(Math.max(1, Number(e.target.value)))}
                     className="w-14 text-center font-extrabold text-sm bg-white border rounded-xl py-1"
                   />
-                  <button
-                    onClick={() => setDetailQty(detailQty + 1)}
-                    className="w-8 h-8 rounded-xl bg-white font-extrabold border"
-                  >
-                    +
-                  </button>
+                  <button onClick={() => setDetailQty(detailQty + 1)} className="w-8 h-8 rounded-xl bg-white font-extrabold border">+</button>
                 </div>
                 <button
                   onClick={() => addToCart(selectedProduct, detailQty, selectedVariant)}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow"
+                  className="bg-indigo-600 text-white font-extrabold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow"
                 >
                   Add for ₹{calculateUnitPrice(selectedProduct, detailQty) * detailQty}
                 </button>
-              </div>
-
-              {/* Product Description & Specifications */}
-              <div className="space-y-2 text-xs text-slate-700 border-t pt-3">
-                <div>
-                  <strong className="text-slate-900">Product Description:</strong>
-                  <p className="mt-0.5">{selectedProduct.description || 'Verified local supply with fast 20–30km delivery.'}</p>
-                </div>
-                <div>
-                  <strong className="text-slate-900">Specifications & Highlights:</strong>
-                  <p className="mt-0.5 text-indigo-800 font-medium">
-                    {selectedProduct.specifications || 'Quality Checked • Ready Stock • GST Invoice Supported'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Customer Ratings & Reviews Section */}
-              <div className="border-t pt-3 space-y-3">
-                <h4 className="text-xs font-extrabold text-slate-900">
-                  ⭐ Customer Reviews ({selectedProduct.reviewsCount || 24})
-                </h4>
-                <form onSubmit={handleAddReview} className="flex gap-2">
-                  <select
-                    value={reviewInput.rating}
-                    onChange={(e) => setReviewInput({ ...reviewInput, rating: e.target.value })}
-                    className="border rounded-xl px-2 py-1.5 text-xs font-bold bg-slate-50"
-                  >
-                    <option value="5">5 ★</option>
-                    <option value="4">4 ★</option>
-                    <option value="3">3 ★</option>
-                  </select>
-                  <input
-                    type="text"
-                    placeholder="Write a customer review..."
-                    value={reviewInput.comment}
-                    onChange={(e) => setReviewInput({ ...reviewInput, comment: e.target.value })}
-                    className="flex-1 border rounded-xl px-3 py-1.5 text-xs"
-                  />
-                  <button type="submit" className="bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl">
-                    Post
-                  </button>
-                </form>
-
-                <div className="space-y-2 max-h-36 overflow-y-auto">
-                  {(selectedProduct.reviews && selectedProduct.reviews.length > 0
-                    ? selectedProduct.reviews
-                    : [
-                        { userName: 'Suman Mondal (Karimpur)', rating: 5, comment: 'Fast delivery and genuine wholesale rate!', date: 'Verified Buyer' },
-                        { userName: 'Priya Stores', rating: 5, comment: 'Great packaging, ordered 20 units for my shop.', date: 'B2B Partner' }
-                      ]
-                  ).map((rev, i) => (
-                    <div key={i} className="bg-slate-50 p-2.5 rounded-xl text-xs border border-slate-100">
-                      <div className="flex justify-between font-bold text-slate-800">
-                        <span>{rev.userName}</span>
-                        <span className="text-amber-600">{'★'.repeat(rev.rating || 5)}</span>
-                      </div>
-                      <p className="text-slate-600 mt-0.5">{rev.comment}</p>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* ==================== 3. ACCOUNT VIEW ==================== */}
+        {/* ==================== 7. ACCOUNT VIEW ==================== */}
         {viewMode === 'ACCOUNT' && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
             {currentUser ? (
@@ -1493,99 +1866,6 @@ export default function SuperAppHome() {
                 </form>
               </div>
             )}
-          </div>
-        )}
-
-        {/* ==================== 4. ORDERS VIEW ==================== */}
-        {viewMode === 'ORDERS' && (
-          <div className="space-y-3">
-            <div className="bg-white rounded-2xl p-4 border flex items-center justify-between">
-              <h2 className="text-base font-extrabold flex items-center gap-1.5">
-                <ClipboardList className="w-5 h-5 text-indigo-600" /> Live Orders ({orders.length})
-              </h2>
-              <button onClick={fetchOrders} className="bg-slate-100 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1">
-                <RefreshCw className="w-3.5 h-3.5" /> Refresh
-              </button>
-            </div>
-            {orders.map((order) => (
-              <div key={order._id} className="bg-white rounded-2xl p-4 border shadow-sm space-y-2.5">
-                <div className="flex justify-between border-b pb-2">
-                  <div>
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">
-                      {order.status || 'PENDING'}
-                    </span>
-                    <h3 className="font-bold text-sm mt-1">{order.customer?.name || 'Verified Buyer'}</h3>
-                    <p className="text-xs text-slate-500">{order.deliveryAddress}</p>
-                  </div>
-                  <div className="text-base font-extrabold text-indigo-700">₹{order.totalAmount}</div>
-                </div>
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {['CONFIRMED', 'OUT_FOR_DELIVERY', 'DELIVERED'].map((st) => (
-                    <button
-                      key={st}
-                      onClick={() => handleUpdateOrderStatus(order._id, st)}
-                      className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold ${
-                        order.status === st ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'
-                      }`}
-                    >
-                      {st.replace(/_/g, ' ')}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ==================== 5. ADMIN VIEW ==================== */}
-        {viewMode === 'ADMIN' && (
-          <div className="bg-white rounded-2xl shadow-sm border p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">Add Rich Product (Admin)</h2>
-              <button
-                type="button"
-                onClick={handleQuickDemoProduct}
-                className="text-xs bg-purple-100 text-purple-800 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1"
-              >
-                <Sparkles className="w-3.5 h-3.5" /> + 1-Tap Rich Sample
-              </button>
-            </div>
-
-            <form onSubmit={handleAddProduct} className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <input type="text" required placeholder="Product Name *" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
-                <input type="text" placeholder="Brand Name (e.g., ITC, Tata, GSK)" value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm bg-white">
-                  <option value="GENERAL">GENERAL (Grocery)</option>
-                  <option value="FOOD">FOOD (Restaurant)</option>
-                  <option value="MEDICINE">MEDICINE (Pharmacy)</option>
-                  <option value="ELECTRONICS">ELECTRONICS</option>
-                </select>
-                <input type="text" placeholder="Variants (comma separated: 500g, 1kg, 5kg)" value={formData.variantsText} onChange={(e) => setFormData({ ...formData, variantsText: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <input type="number" required placeholder="Retail Price (₹) *" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
-                <input type="number" placeholder="Wholesale Price (₹)" value={formData.wholesalePrice} onChange={(e) => setFormData({ ...formData, wholesalePrice: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
-              </div>
-
-              <textarea placeholder="Product Description & Highlights..." value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-xs h-16" />
-
-              <div className="p-3 rounded-xl bg-indigo-50 border flex flex-col sm:flex-row gap-2">
-                <label className="cursor-pointer bg-indigo-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shrink-0">
-                  <Camera className="w-4 h-4" /> Take / Upload Photo
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e.target.files?.[0], 'PRODUCT')} />
-                </label>
-                <input type="text" placeholder="Or paste image URL..." value={formData.imageUrl} onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-xs bg-white" />
-              </div>
-
-              <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl">
-                Save Rich Product to Database
-              </button>
-            </form>
           </div>
         )}
       </main>
