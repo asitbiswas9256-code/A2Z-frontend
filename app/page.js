@@ -5,21 +5,19 @@ import {
   ShoppingBag, Truck, ShieldAlert, Package, CheckCircle2, 
   RefreshCw, Sparkles, Trash2, User, LogOut, MapPin, 
   ClipboardList, Bike, Camera, CreditCard, Banknote, 
-  Settings, Search, ServerCrash, Server, Languages, 
-  Download, X, Flame, Clock, Store, Heart, FileText, 
-  RotateCcw, Ban, Navigation, BarChart3, Bookmark
+  Settings, Search, Server, Languages, X, Flame, Clock, 
+  Store, Heart, FileText, RotateCcw, Ban, Navigation, 
+  BarChart3, Bookmark, Utensils, Salad, Zap
 } from 'lucide-react';
 
 const API_URL = 'https://a2z-backend-tgls.onrender.com/api';
-
-// Central Hub Coordinates (Karimpur, Nadia, West Bengal) for 20-30km Radius Check
 const HUB_COORDS = { lat: 23.9715, lng: 88.6265, name: 'Karimpur Central Hub' };
 
 const NEARBY_STORES = [
   { id: 's1', name: 'Biswas Agro & Grocery Hub', category: 'GENERAL', dist: '2.4 km', rating: 4.8, tag: 'Wholesale & Retail' },
   { id: 's2', name: 'Royal Bengal Biryani & Kitchen', category: 'FOOD', dist: '1.8 km', rating: 4.7, tag: '30-Min Hot Delivery' },
-  { id: 's3', name: 'LifeCare 24×7 Medico', category: 'MEDICINE', dist: '3.1 km', rating: 4.9, tag: 'Verified Pharmacy' },
-  { id: 's4', name: 'TechZone Mobile & Gadgets', category: 'ELECTRONICS', dist: '4.5 km', rating: 4.6, tag: 'Official Warranty' }
+  { id: 's3', name: 'GreenBowl Diet & Salad Cafe', category: 'FOOD', dist: '2.1 km', rating: 4.9, tag: 'Light & Healthy' },
+  { id: 's4', name: 'LifeCare 24×7 Medico', category: 'MEDICINE', dist: '3.1 km', rating: 4.9, tag: 'Verified Pharmacy' }
 ];
 
 const PROMO_BANNERS = [
@@ -33,20 +31,24 @@ const PROMO_BANNERS = [
   },
   {
     id: 'b2',
-    badge: 'ZOMATO-STYLE EXPRESS FOOD',
-    title: 'Hot Biryani, Rolls & Combos in 35 Mins',
-    sub: 'Zero surge fee within local zone • Split-fleet checkout supported',
+    badge: 'ZOMATO-STYLE FOOD ZONE',
+    title: 'Pure Veg, Non-Veg, Fast Food & Healthy Diet Meals',
+    sub: 'Instant dietary toggles • Hot 30-min local rider delivery',
     code: 'HOTFOOD50',
     bg: 'from-rose-700 via-red-600 to-amber-600'
   }
 ];
 
 export default function SuperAppHome() {
-  const [viewMode, setViewMode] = useState('STORE'); // STORE | ORDERS | WISHLIST | ADMIN | ACCOUNT
+  const [viewMode, setViewMode] = useState('STORE');
   const [activeTab, setActiveTab] = useState('ALL');
   const [selectedStoreFilter, setSelectedStoreFilter] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
   const [lang, setLang] = useState('EN');
+
+  // NEW: Zomato-Style Dietary & Food Type Toggles
+  const [dietFilter, setDietFilter] = useState('ALL'); // 'ALL' | 'VEG' | 'NON_VEG'
+  const [foodStyleFilter, setFoodStyleFilter] = useState('ALL'); // 'ALL' | 'FAST_FOOD' | 'LIGHT_DIET' | 'MAIN_COURSE'
 
   // Search, Auto-Suggestions & Sorting
   const [searchQuery, setSearchQuery] = useState('');
@@ -68,7 +70,7 @@ export default function SuperAppHome() {
   const [invoiceOrder, setInvoiceOrder] = useState(null);
 
   // GPS Radius Geofencing State
-  const [gpsInfo, setGpsInfo] = useState(null); // { distKm, withinZone, coordsText }
+  const [gpsInfo, setGpsInfo] = useState(null);
   const [gpsLoading, setGpsLoading] = useState(false);
 
   // Data States
@@ -84,7 +86,6 @@ export default function SuperAppHome() {
     cloudinaryPreset: '',
     razorpayKeyId: ''
   });
-  const [showKeySettings, setShowKeySettings] = useState(false);
 
   // User & Auth States
   const [currentUser, setCurrentUser] = useState(null);
@@ -102,12 +103,16 @@ export default function SuperAppHome() {
   const [prescriptionUrl, setPrescriptionUrl] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('RAZORPAY');
 
-  // Admin Form State
+  // Admin Form State (with Veg/Non-Veg & Fast/Diet Food fields)
   const [formData, setFormData] = useState({
     name: '',
     brand: '',
-    shopName: 'Biswas Agro & Grocery Hub',
-    category: 'GENERAL',
+    shopName: 'Royal Bengal Biryani & Kitchen',
+    category: 'FOOD',
+    dietaryType: 'VEG',
+    foodStyle: 'FAST_FOOD',
+    prepTime: '20–25 mins',
+    calories: '320 kcal',
     price: '',
     wholesalePrice: '',
     minWholesaleQty: '5',
@@ -124,35 +129,45 @@ export default function SuperAppHome() {
       subtitle: '20–30km Hyper-Local Wholesale & Retail Super App',
       store: 'Store',
       orders: 'Orders',
-      wishlist: 'Wishlist',
       admin: '+ Admin',
       login: 'Login',
       wholesaleActive: '📦 B2B Wholesale Tiered Pricing Active',
       retailActive: '🛍️ Standard Retail Mode',
       switchRetail: 'Switch to Retail',
       switchWholesale: 'Switch to Wholesale',
-      searchPlaceholder: 'Search products, brands, stores or categories...',
-      nearbyStores: 'Popular Nearby Stores (20–30km)',
+      searchPlaceholder: 'Search biryani, salad, roll, groceries, medicine...',
+      nearbyStores: 'Popular Nearby Stores & Kitchens (20–30km)',
       trendingTitle: 'Trending & Recommended',
       recentlyViewedTitle: 'Recently Viewed Products',
-      clearFilter: 'Show All Stores'
+      clearFilter: 'Reset Filters',
+      allDiet: 'All Food',
+      pureVeg: 'Pure Veg',
+      nonVeg: 'Non-Veg',
+      fastFood: '🍔 Fast Food',
+      lightDiet: '🥗 Light / Diet Food',
+      mainCourse: '🍛 Heavy Meals'
     },
     BN: {
       subtitle: '২০–৩০ কিমি হাইপার-লোকাল হোলসেল ও রিটেল সুপার অ্যাপ',
       store: 'দোকান',
       orders: 'অর্ডার',
-      wishlist: 'উইশলিস্ট',
       admin: '+ অ্যাডমিন',
       login: 'লগইন',
       wholesaleActive: '📦 পাইকারি (B2B) রেট চালু আছে',
       retailActive: '🛍️ খুচরো (Retail) দাম চালু আছে',
       switchRetail: 'খুচরো রেট দেখুন',
       switchWholesale: 'পাইকারি রেট দেখুন',
-      searchPlaceholder: 'পণ্য, ব্র্যান্ড, দোকান বা ক্যাটাগরি খুঁজুন...',
-      nearbyStores: 'কাছাকাছি জনপ্রিয় দোকান (২০–৩০ কিমি)',
+      searchPlaceholder: 'বিরিয়ানি, সালাদ, রোল, মুদিখানা বা ওষুধ খুঁজুন...',
+      nearbyStores: 'কাছাকাছি জনপ্রিয় দোকান ও রেস্তোরাঁ (২০–৩০ কিমি)',
       trendingTitle: 'ট্রেন্ডিং ও সেরা পণ্য',
       recentlyViewedTitle: 'সম্প্রতি দেখা পণ্য',
-      clearFilter: 'সব দোকান দেখুন'
+      clearFilter: 'ফিল্টার সরান',
+      allDiet: 'সব খাবার',
+      pureVeg: 'নিরামিষ (Veg)',
+      nonVeg: 'আমিষ (Non-Veg)',
+      fastFood: '🍔 ফাস্ট ফুড',
+      lightDiet: '🥗 হালকা ও ডায়েট খাবার',
+      mainCourse: '🍛 মেইন কোর্স মিল'
     }
   }[lang];
 
@@ -212,6 +227,30 @@ export default function SuperAppHome() {
     try { localStorage.setItem('a2z_lang', nextLang); } catch (e) {}
   };
 
+  // Smart Helper: Infer Veg/Non-Veg & Food Style even on older products
+  const getProductDiet = (p) => {
+    if (p.dietaryType && p.dietaryType !== 'NONE') return p.dietaryType;
+    if (p.category !== 'FOOD') return 'NONE';
+    const text = `${p.name || ''} ${p.description || ''}`.toLowerCase();
+    if (text.includes('chicken') || text.includes('mutton') || text.includes('egg') || text.includes('fish') || text.includes('non-veg')) {
+      return 'NON_VEG';
+    }
+    return 'VEG';
+  };
+
+  const getProductFoodStyle = (p) => {
+    if (p.foodStyle && p.foodStyle !== 'NONE') return p.foodStyle;
+    if (p.category !== 'FOOD') return 'NONE';
+    const text = `${p.name || ''} ${p.description || ''}`.toLowerCase();
+    if (text.includes('salad') || text.includes('oats') || text.includes('diet') || text.includes('light') || text.includes('soup') || text.includes('fruit') || text.includes('healthy')) {
+      return 'LIGHT_DIET';
+    }
+    if (text.includes('roll') || text.includes('burger') || text.includes('chowmein') || text.includes('momo') || text.includes('pizza') || text.includes('fries') || text.includes('fast')) {
+      return 'FAST_FOOD';
+    }
+    return 'MAIN_COURSE';
+  };
+
   const fetchProducts = async () => {
     if (products.length === 0) setLoading(true);
     const wakeTimer = setTimeout(() => setServerStatus('WAKING_UP'), 1500);
@@ -243,7 +282,6 @@ export default function SuperAppHome() {
     }
   };
 
-  // Haversine Distance Calculator for 20-30km GPS Radius Validation
   const detectGpsRadius = () => {
     if (typeof window === 'undefined' || !navigator.geolocation) {
       alert('Geolocation is not supported by your browser');
@@ -253,7 +291,7 @@ export default function SuperAppHome() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
-        const R = 6371; // Earth radius in km
+        const R = 6371;
         const dLat = ((latitude - HUB_COORDS.lat) * Math.PI) / 180;
         const dLon = ((longitude - HUB_COORDS.lng) * Math.PI) / 180;
         const a =
@@ -278,17 +316,16 @@ export default function SuperAppHome() {
         setStatusMsg(
           withinZone
             ? `✅ GPS Verified! You are ${distanceKm} km away (Inside 30km Hyper-Local Zone).`
-            : `⚠️ You are ${distanceKm} km from ${HUB_COORDS.name} (Outside standard 30km radius, regional shipping applies).`
+            : `⚠️ You are ${distanceKm} km from ${HUB_COORDS.name}.`
         );
       },
       () => {
         setGpsLoading(false);
-        setStatusMsg('⚠️ Could not access GPS. Please allow location permission or type address manually.');
+        setStatusMsg('⚠️ Could not access GPS. Please type address manually.');
       }
     );
   };
 
-  // Wishlist Toggle
   const toggleWishlist = (product) => {
     setWishlist((prev) => {
       const exists = prev.some((p) => p._id === product._id);
@@ -299,7 +336,6 @@ export default function SuperAppHome() {
     });
   };
 
-  // Save for Later inside Cart
   const moveToSavedForLater = (idx) => {
     const item = cart[idx];
     if (!item) return;
@@ -324,11 +360,10 @@ export default function SuperAppHome() {
     setStatusMsg(`🛒 Moved "${item.name}" back to active cart!`);
   };
 
-  // Open Product Detail Modal
   const openProductModal = (product) => {
     const variantsList = Array.isArray(product.variants) && product.variants.length > 0
       ? product.variants
-      : ['Standard Pack', 'Family / Bulk Pack'];
+      : ['Regular Portion', 'Large / Family Pack'];
     setSelectedProduct(product);
     setSelectedVariant(variantsList[0]);
     setDetailQty(isWholesale ? (product.minWholesaleQty || 5) : 1);
@@ -342,7 +377,6 @@ export default function SuperAppHome() {
     });
   };
 
-  // Dynamic Tiered Wholesale Slab Calculator
   const calculateUnitPrice = (product, qty) => {
     const retail = Number(product.price || 100);
     const baseWholesale = Number(product.wholesalePrice || Math.round(retail * 0.85));
@@ -373,7 +407,6 @@ export default function SuperAppHome() {
     if (selectedProduct) setSelectedProduct(null);
   };
 
-  // 1-Click Repeat Previous Order
   const handleRepeatOrder = (order) => {
     if (!order.items || order.items.length === 0) return;
     const restoredItems = order.items.map((item) => {
@@ -419,164 +452,110 @@ export default function SuperAppHome() {
     }
   };
 
-  const handleAddReview = (e) => {
-    e.preventDefault();
-    if (!reviewInput.comment.trim() || !selectedProduct) return;
-    const newReview = {
-      userName: currentUser ? currentUser.name : 'Verified Local Shopper',
-      rating: Number(reviewInput.rating),
-      comment: reviewInput.comment,
-      date: 'Just now'
-    };
-    const updatedReviews = [newReview, ...(selectedProduct.reviews || [])];
-    const updatedProduct = {
-      ...selectedProduct,
-      reviews: updatedReviews,
-      reviewsCount: (selectedProduct.reviewsCount || 24) + 1
-    };
-    setSelectedProduct(updatedProduct);
-    setProducts((prev) => prev.map((p) => (p._id === updatedProduct._id ? updatedProduct : p)));
-    setReviewInput({ rating: 5, comment: '' });
-    setStatusMsg('⭐ Thank you! Your review has been posted.');
-  };
-
-  const handleFileUpload = async (file, targetType) => {
-    if (!file) return;
-    setUploadingImg(true);
-    setStatusMsg('📷 Processing photo...');
-    try {
-      let finalImageUrl = '';
-      if (cloudConfig.cloudinaryCloudName && cloudConfig.cloudinaryPreset) {
-        const formPayload = new FormData();
-        formPayload.append('file', file);
-        formPayload.append('upload_preset', cloudConfig.cloudinaryPreset);
-        const res = await fetch(
-          `https://api.cloudinary.com/v1_1/${cloudConfig.cloudinaryCloudName}/image/upload`,
-          { method: 'POST', body: formPayload }
-        );
-        const data = await res.json();
-        if (!res.ok) throw new Error('Upload failed');
-        finalImageUrl = data.secure_url;
-      } else {
-        finalImageUrl = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              const MAX_WIDTH = 500;
-              const scaleSize = MAX_WIDTH / img.width;
-              canvas.width = img.width > MAX_WIDTH ? MAX_WIDTH : img.width;
-              canvas.height = img.width > MAX_WIDTH ? img.height * scaleSize : img.height;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-              resolve(canvas.toDataURL('image/jpeg', 0.72));
-            };
-            img.onerror = reject;
-          };
-          reader.onerror = reject;
-        });
-      }
-      if (targetType === 'PRODUCT') {
-        setFormData((prev) => ({ ...prev, imageUrl: finalImageUrl }));
-      } else {
-        setPrescriptionUrl(finalImageUrl);
-      }
-      setStatusMsg('✅ Photo attached!');
-    } catch (err) {
-      setStatusMsg(`❌ ${err.message}`);
-    } finally {
-      setUploadingImg(false);
-    }
-  };
-
-  const handleQuickDemoProduct = async () => {
-    setStatusMsg('Adding rich sample product to MongoDB...');
-    const samples = [
+  // Seed Diverse Veg, Non-Veg, Fast Food & Light Diet Products
+  const handleQuickDemoFoodPack = async () => {
+    setStatusMsg('Adding Veg, Non-Veg, Fast Food & Diet Food items to MongoDB...');
+    const foodSamples = [
       {
-        name: 'Aashirvaad Select Sharbati Atta',
-        brand: 'ITC Aashirvaad',
-        shopName: 'Biswas Agro & Grocery Hub',
-        category: 'GENERAL',
-        price: 460,
-        wholesalePrice: 410,
-        minWholesaleQty: 5,
-        stock: 90,
-        variants: ['5kg Pack', '10kg Family Pack', '25kg Wholesale Sack'],
-        description: '100% MP Sharbati wheat flour for soft rotis. Fresh stock available for retail & kirana wholesale.',
-        specifications: 'Shelf Life: 4 Months • FSSAI Certified • Moisture Proof Packaging',
-        rating: 4.8,
-        reviewsCount: 64,
-        requiresPrescription: false,
-        imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=600&q=80'
-      },
-      {
-        name: 'Special Royal Chicken Dum Biryani',
-        brand: 'Royal Bengal Kitchen',
+        name: 'Paneer Tikka Masala Roll (Pure Veg Fast Food)',
+        brand: 'Kolkata Roll Corner',
         shopName: 'Royal Bengal Biryani & Kitchen',
         category: 'FOOD',
-        price: 240,
-        wholesalePrice: 195,
+        dietaryType: 'VEG',
+        foodStyle: 'FAST_FOOD',
+        prepTime: '15–20 mins',
+        calories: '380 kcal',
+        price: 95,
+        wholesalePrice: 75,
+        minWholesaleQty: 10,
+        stock: 60,
+        variants: ['Single Roll', 'Double Paneer Jumbo Roll', 'Party Pack of 5'],
+        description: 'Char-grilled smoky paneer cubes wrapped in a flaky paratha with mint chutney and crunchy onions.',
+        specifications: '100% Pure Vegetarian • Freshly Grilled • Zero Trans Fat',
+        rating: 4.8,
+        reviewsCount: 84,
+        requiresPrescription: false,
+        imageUrl: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=600&q=80'
+      },
+      {
+        name: 'Mediterranean Quinoa & Sprouted Moong Diet Bowl',
+        brand: 'GreenBowl Healthy',
+        shopName: 'GreenBowl Diet & Salad Cafe',
+        category: 'FOOD',
+        dietaryType: 'VEG',
+        foodStyle: 'LIGHT_DIET',
+        prepTime: '12–15 mins',
+        calories: '210 kcal • High Protein',
+        price: 160,
+        wholesalePrice: 135,
         minWholesaleQty: 5,
         stock: 40,
-        variants: ['Regular Plate (1 Pc)', 'Special Combo (2 Pcs + Egg)', 'Family Bucket (4 Serves)'],
-        description: 'Authentic Kolkata-style fragrant basmati Dum Biryani with tender chicken, potato, boiled egg, and raita.',
-        specifications: 'Prep Time: 20 Mins • Hygienic Sealed Handi • 100% Halal',
+        variants: ['Regular Bowl (250g)', 'Gym Protein Plus Bowl (400g)'],
+        description: 'Light, oil-free diet meal packed with sprouted green moong, cherry tomatoes, cucumber, sweet corn, and lemon-herb dressing.',
+        specifications: 'Low Calorie (210 kcal) • Diabetic & Gym Friendly • 100% Pure Veg',
         rating: 4.9,
-        reviewsCount: 112,
+        reviewsCount: 52,
         requiresPrescription: false,
-        imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80'
+        imageUrl: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80'
       },
       {
-        name: 'Augmentin 625 Duo Tablet Strip (10 Tabs)',
-        brand: 'GSK Pharma',
-        shopName: 'LifeCare 24×7 Medico',
-        category: 'MEDICINE',
-        price: 204,
-        wholesalePrice: 168,
-        minWholesaleQty: 10,
-        stock: 150,
-        variants: ['1 Strip (10 Tablets)', 'Box of 10 Strips (Pharmacy Pack)'],
-        description: 'Broad-spectrum antibiotic composed of Amoxycillin and Potassium Clavulanate. Verified pharmacy dispatch.',
-        specifications: 'Cold-Chain Protected • Batch Verified • Rx Mandatory',
-        rating: 4.9,
-        reviewsCount: 48,
-        requiresPrescription: true,
-        imageUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80'
-      },
-      {
-        name: 'SuperVOOC 65W Type-C Fast Charger Adapter',
-        brand: 'TechZone Official',
-        shopName: 'TechZone Mobile & Gadgets',
-        category: 'ELECTRONICS',
-        price: 799,
-        wholesalePrice: 540,
+        name: 'Crispy Zinger Chicken Burger & Fries Combo',
+        brand: 'CrunchTown Express',
+        shopName: 'Royal Bengal Biryani & Kitchen',
+        category: 'FOOD',
+        dietaryType: 'NON_VEG',
+        foodStyle: 'FAST_FOOD',
+        prepTime: '20 mins',
+        calories: '540 kcal',
+        price: 179,
+        wholesalePrice: 145,
         minWholesaleQty: 5,
-        stock: 55,
-        variants: ['Adapter Only', 'Adapter + 1m Type-C Cable', 'Retailer 5-Pack Box'],
-        description: 'High-speed 65W GaN fast charger compatible with 5G smartphones, tablets, and USB-C devices.',
-        specifications: 'Output: 65W Max • Over-Voltage Protection • 6 Months Replacement Warranty',
+        stock: 50,
+        variants: ['Burger Only', 'Burger + Fries + Coke Combo'],
+        description: 'Juicy crispy fried chicken fillet topped with cheddar cheese, lettuce, and peri-peri mayo.',
+        specifications: '100% Halal Chicken • Delivered Hot & Crispy',
         rating: 4.7,
-        reviewsCount: 39,
+        reviewsCount: 96,
         requiresPrescription: false,
-        imageUrl: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=600&q=80'
+        imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80'
+      },
+      {
+        name: 'Grilled Lemon-Herb Chicken Breast & Steamed Veggies (Diet)',
+        brand: 'GreenBowl Healthy',
+        shopName: 'GreenBowl Diet & Salad Cafe',
+        category: 'FOOD',
+        dietaryType: 'NON_VEG',
+        foodStyle: 'LIGHT_DIET',
+        prepTime: '18 mins',
+        calories: '265 kcal • 32g Protein',
+        price: 220,
+        wholesalePrice: 185,
+        minWholesaleQty: 5,
+        stock: 35,
+        variants: ['Standard 150g Breast', 'Double Protein 300g Pack'],
+        description: 'Lean olive-oil grilled chicken breast served with steamed broccoli, carrots, and black pepper.',
+        specifications: 'Keto & Weight-Loss Friendly • High Protein • Low Carb',
+        rating: 4.9,
+        reviewsCount: 61,
+        requiresPrescription: false,
+        imageUrl: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=600&q=80'
       }
     ];
-    const randomItem = samples[Math.floor(Math.random() * samples.length)];
+
+    const randomFood = foodSamples[Math.floor(Math.random() * foodSamples.length)];
     try {
       const res = await fetch(`${API_URL}/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(randomItem)
+        body: JSON.stringify(randomFood)
       });
       if (res.ok) {
-        setStatusMsg(`✅ Added "${randomItem.name}"!`);
+        setStatusMsg(`✅ Added "${randomFood.name}"!`);
+        setActiveTab('FOOD');
         fetchProducts();
       }
     } catch (err) {
-      setStatusMsg('❌ Failed to add sample item');
+      setStatusMsg('❌ Failed to add sample food');
     }
   };
 
@@ -592,6 +571,10 @@ export default function SuperAppHome() {
         brand: formData.brand || 'A2Z Verified',
         shopName: formData.shopName || 'A2Z Central Hub',
         category: formData.category,
+        dietaryType: formData.category === 'FOOD' ? formData.dietaryType : 'NONE',
+        foodStyle: formData.category === 'FOOD' ? formData.foodStyle : 'NONE',
+        prepTime: formData.prepTime || '25 mins',
+        calories: formData.calories || '',
         price: Number(formData.price),
         wholesalePrice: Number(formData.wholesalePrice || formData.price),
         minWholesaleQty: Number(formData.minWholesaleQty || 5),
@@ -613,6 +596,40 @@ export default function SuperAppHome() {
       setViewMode('STORE');
     } catch (err) {
       setStatusMsg(`❌ ${err.message}`);
+    }
+  };
+
+  const handleFileUpload = async (file, targetType) => {
+    if (!file) return;
+    setUploadingImg(true);
+    try {
+      const finalImageUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 500;
+            const scaleSize = MAX_WIDTH / img.width;
+            canvas.width = img.width > MAX_WIDTH ? MAX_WIDTH : img.width;
+            canvas.height = img.width > MAX_WIDTH ? img.height * scaleSize : img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', 0.72));
+          };
+          img.onerror = reject;
+        };
+        reader.onerror = reject;
+      });
+      if (targetType === 'PRODUCT') setFormData((prev) => ({ ...prev, imageUrl: finalImageUrl }));
+      else setPrescriptionUrl(finalImageUrl);
+      setStatusMsg('✅ Photo attached!');
+    } catch (err) {
+      setStatusMsg('❌ Photo upload failed');
+    } finally {
+      setUploadingImg(false);
     }
   };
 
@@ -646,30 +663,6 @@ export default function SuperAppHome() {
       setIsWholesale(userObj.role === 'WHOLESALE_BUYER');
       setStatusMsg(`✅ Logged in as ${userObj.name}`);
       setViewMode(userObj.role === 'DELIVERY_PARTNER' ? 'ORDERS' : 'STORE');
-    } catch (err) {
-      setStatusMsg(`❌ ${err.message}`);
-    }
-  };
-
-  const handleAuthSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const endpoint = authMode === 'LOGIN' ? '/users/login' : '/users/register';
-      const payload = authMode === 'LOGIN' ? { email: authForm.email, password: authForm.password } : authForm;
-      const res = await fetch(`${API_URL}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Auth failed');
-      const userObj = data.user || {
-        id: data._id, name: data.name, email: data.email, phone: data.phone, role: data.role, gstNumber: data.gstNumber
-      };
-      setCurrentUser(userObj);
-      localStorage.setItem('a2z_user', JSON.stringify(userObj));
-      setIsWholesale(userObj.role === 'WHOLESALE_BUYER');
-      setViewMode('STORE');
     } catch (err) {
       setStatusMsg(`❌ ${err.message}`);
     }
@@ -727,24 +720,8 @@ export default function SuperAppHome() {
       await saveOrderToDatabase('COD - Pay on Delivery');
       return;
     }
-    if (cloudConfig.razorpayKeyId && typeof window !== 'undefined' && window.Razorpay) {
-      const options = {
-        key: cloudConfig.razorpayKeyId,
-        amount: finalPayableTotal * 100,
-        currency: 'INR',
-        name: 'A2Z Super App',
-        description: '20-30km Hyper-Local Order',
-        handler: async function (response) {
-          await saveOrderToDatabase(`PAID via Razorpay (${response.razorpay_payment_id})`);
-        },
-        prefill: { name: currentUser.name, email: currentUser.email, contact: currentUser.phone || '9876543210' },
-        theme: { color: '#4338ca' }
-      };
-      new window.Razorpay(options).open();
-    } else {
-      const demoPayId = 'pay_A2Z' + Math.floor(100000 + Math.random() * 900000);
-      await saveOrderToDatabase(`PAID Online (${demoPayId})`);
-    }
+    const demoPayId = 'pay_A2Z' + Math.floor(100000 + Math.random() * 900000);
+    await saveOrderToDatabase(`PAID Online (${demoPayId})`);
   };
 
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
@@ -761,19 +738,18 @@ export default function SuperAppHome() {
     } catch (err) {}
   };
 
-  // Search Suggestions & Filtering
-  const searchSuggestions = searchQuery.trim()
-    ? products.filter(
-        (p) =>
-          (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (p.brand || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (p.shopName || '').toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 5)
-    : [];
-
+  // Multi-Layer Search + Category + Veg/Non-Veg + Fast/Light Food Filtering
   const processedProducts = products
     .filter((p) => (activeTab === 'ALL' ? true : p.category === activeTab))
     .filter((p) => (selectedStoreFilter ? (p.shopName || '').includes(selectedStoreFilter) : true))
+    .filter((p) => {
+      if (dietFilter === 'ALL') return true;
+      return getProductDiet(p) === dietFilter;
+    })
+    .filter((p) => {
+      if (foodStyleFilter === 'ALL') return true;
+      return getProductFoodStyle(p) === foodStyleFilter;
+    })
     .filter((p) =>
       searchQuery.trim() === ''
         ? true
@@ -796,18 +772,24 @@ export default function SuperAppHome() {
   const deliveryFee = cartSubtotal > 999 || cartSubtotal === 0 ? 0 : 25;
   const finalPayableTotal = Math.max(0, cartSubtotal + deliveryFee - discountAmount);
 
-  // Admin Revenue & Low Stock Metrics
   const totalRevenue = orders
     .filter((o) => o.status !== 'CANCELLED')
     .reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
-  const lowStockProducts = products.filter((p) => Number(p.stock || 100) < 20);
 
   return (
     <div className="min-h-screen pb-28 bg-slate-50">
       {/* Top Sticky Header */}
       <header className="bg-indigo-700 text-white sticky top-0 z-30 shadow-md print:hidden">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
-          <div onClick={() => { setViewMode('STORE'); setSelectedStoreFilter(''); }} className="cursor-pointer">
+          <div
+            onClick={() => {
+              setViewMode('STORE');
+              setSelectedStoreFilter('');
+              setDietFilter('ALL');
+              setFoodStyleFilter('ALL');
+            }}
+            className="cursor-pointer"
+          >
             <div className="flex items-center gap-2">
               <ShoppingBag className="w-6 h-6 text-amber-300 shrink-0" />
               <h1 className="text-base sm:text-xl font-extrabold tracking-tight">A2Z Super App</h1>
@@ -888,9 +870,9 @@ export default function SuperAppHome() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 pt-4 print:p-0">
+      <main className="max-w-5xl mx-auto px-4 pt-4">
         {statusMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-950 text-xs sm:text-sm font-medium flex items-center justify-between shadow-sm print:hidden">
+          <div className="mb-4 p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-950 text-xs sm:text-sm font-medium flex items-center justify-between shadow-sm">
             <span>{statusMsg}</span>
             <button onClick={() => setStatusMsg('')} className="text-xs font-bold underline ml-2">OK</button>
           </div>
@@ -899,8 +881,8 @@ export default function SuperAppHome() {
         {/* ==================== 1. STOREFRONT VIEW ==================== */}
         {viewMode === 'STORE' && (
           <>
-            {/* Search Bar with Live Auto-Suggestions Dropdown */}
-            <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm mb-4 space-y-2.5 relative">
+            {/* Search, Category & Zomato-Style Dietary Filter Box */}
+            <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm mb-4 space-y-3">
               <div className="flex flex-col sm:flex-row gap-2">
                 <div className="relative flex-1">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -908,41 +890,16 @@ export default function SuperAppHome() {
                     type="text"
                     placeholder={t.searchPlaceholder}
                     value={searchQuery}
-                    onFocus={() => setShowSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:bg-white focus:border-indigo-600 outline-none"
                   />
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"
                     >
                       <X className="w-4 h-4" />
                     </button>
-                  )}
-
-                  {showSuggestions && searchSuggestions.length > 0 && (
-                    <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-slate-200 z-40 overflow-hidden">
-                      <div className="px-3 py-1.5 bg-slate-50 text-[10px] font-bold uppercase text-slate-500">
-                        Matching Products & Brands
-                      </div>
-                      {searchSuggestions.map((item) => (
-                        <div
-                          key={item._id}
-                          onMouseDown={() => openProductModal(item)}
-                          className="px-3 py-2.5 hover:bg-indigo-50 cursor-pointer flex items-center justify-between border-t border-slate-100 text-xs"
-                        >
-                          <div>
-                            <div className="font-bold text-slate-900">{item.name}</div>
-                            <div className="text-[10px] text-slate-500">
-                              {item.brand || 'A2Z'} • in {item.category}
-                            </div>
-                          </div>
-                          <span className="font-extrabold text-indigo-700">₹{item.price}</span>
-                        </div>
-                      ))}
-                    </div>
                   )}
                 </div>
 
@@ -957,18 +914,24 @@ export default function SuperAppHome() {
                 </select>
               </div>
 
-              {/* Category Pills */}
+              {/* Primary Category Pills */}
               <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                 {[
                   { id: 'ALL', label: '🔥 All Categories' },
+                  { id: 'FOOD', label: '🍛 Food & Dining (Zomato Mode)' },
                   { id: 'GENERAL', label: '🛒 Grocery & Kirana' },
-                  { id: 'FOOD', label: '🍛 Hot Food (Zomato Mode)' },
                   { id: 'MEDICINE', label: '💊 Pharmacy & Rx' },
                   { id: 'ELECTRONICS', label: '⚡ Electronics & Gadgets' }
                 ].map((cat) => (
                   <button
                     key={cat.id}
-                    onClick={() => setActiveTab(cat.id)}
+                    onClick={() => {
+                      setActiveTab(cat.id);
+                      if (cat.id !== 'FOOD' && cat.id !== 'ALL') {
+                        setDietFilter('ALL');
+                        setFoodStyleFilter('ALL');
+                      }
+                    }}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition ${
                       activeTab === cat.id
                         ? 'bg-indigo-600 text-white shadow-sm'
@@ -978,6 +941,109 @@ export default function SuperAppHome() {
                     {cat.label}
                   </button>
                 ))}
+              </div>
+
+              {/* NEW: Interactive Veg / Non-Veg / Fast Food / Light & Diet Food Toggle Bar */}
+              <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                {/* Left Group: Veg vs Non-Veg FSSAI Toggles */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    onClick={() => setDietFilter('ALL')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition ${
+                      dietFilter === 'ALL'
+                        ? 'bg-slate-900 text-white border-slate-900'
+                        : 'bg-white text-slate-600 border-slate-200'
+                    }`}
+                  >
+                    {t.allDiet}
+                  </button>
+
+                  {/* Pure Veg Toggle */}
+                  <button
+                    onClick={() => {
+                      const next = dietFilter === 'VEG' ? 'ALL' : 'VEG';
+                      setDietFilter(next);
+                      if (next !== 'ALL') setActiveTab('FOOD');
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border flex items-center gap-1.5 transition ${
+                      dietFilter === 'VEG'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                        : 'bg-emerald-50/70 text-emerald-900 border-emerald-300 hover:bg-emerald-100'
+                    }`}
+                  >
+                    <span className="w-3.5 h-3.5 border-2 border-current rounded-sm flex items-center justify-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                    </span>
+                    {t.pureVeg}
+                  </button>
+
+                  {/* Non-Veg Toggle */}
+                  <button
+                    onClick={() => {
+                      const next = dietFilter === 'NON_VEG' ? 'ALL' : 'NON_VEG';
+                      setDietFilter(next);
+                      if (next !== 'ALL') setActiveTab('FOOD');
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border flex items-center gap-1.5 transition ${
+                      dietFilter === 'NON_VEG'
+                        ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                        : 'bg-rose-50/70 text-rose-900 border-rose-300 hover:bg-rose-100'
+                    }`}
+                  >
+                    <span className="w-3.5 h-3.5 border-2 border-current rounded-sm flex items-center justify-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                    </span>
+                    {t.nonVeg}
+                  </button>
+                </div>
+
+                {/* Right Group: Fast Food vs Light/Diet Food vs Main Course Toggles */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    onClick={() => {
+                      const next = foodStyleFilter === 'FAST_FOOD' ? 'ALL' : 'FAST_FOOD';
+                      setFoodStyleFilter(next);
+                      if (next !== 'ALL') setActiveTab('FOOD');
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition ${
+                      foodStyleFilter === 'FAST_FOOD'
+                        ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-sm'
+                        : 'bg-amber-50/70 text-amber-900 border-amber-300 hover:bg-amber-100'
+                    }`}
+                  >
+                    {t.fastFood}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const next = foodStyleFilter === 'LIGHT_DIET' ? 'ALL' : 'LIGHT_DIET';
+                      setFoodStyleFilter(next);
+                      if (next !== 'ALL') setActiveTab('FOOD');
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition ${
+                      foodStyleFilter === 'LIGHT_DIET'
+                        ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
+                        : 'bg-teal-50/70 text-teal-900 border-teal-300 hover:bg-teal-100'
+                    }`}
+                  >
+                    {t.lightDiet}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const next = foodStyleFilter === 'MAIN_COURSE' ? 'ALL' : 'MAIN_COURSE';
+                      setFoodStyleFilter(next);
+                      if (next !== 'ALL') setActiveTab('FOOD');
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition ${
+                      foodStyleFilter === 'MAIN_COURSE'
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                        : 'bg-indigo-50/70 text-indigo-900 border-indigo-200 hover:bg-indigo-100'
+                    }`}
+                  >
+                    {t.mainCourse}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1018,9 +1084,14 @@ export default function SuperAppHome() {
                 <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
                   <Store className="w-4 h-4 text-indigo-600" /> {t.nearbyStores}
                 </h3>
-                {selectedStoreFilter && (
+                {(selectedStoreFilter || dietFilter !== 'ALL' || foodStyleFilter !== 'ALL') && (
                   <button
-                    onClick={() => setSelectedStoreFilter('')}
+                    onClick={() => {
+                      setSelectedStoreFilter('');
+                      setDietFilter('ALL');
+                      setFoodStyleFilter('ALL');
+                      setActiveTab('ALL');
+                    }}
                     className="text-xs font-bold text-rose-600 underline"
                   >
                     {t.clearFilter}
@@ -1053,15 +1124,15 @@ export default function SuperAppHome() {
             </div>
 
             {/* Product Grid Header */}
-            <div className="flex items-center justify-between mb-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
               <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
                 <Flame className="w-4 h-4 text-amber-500" /> {t.trendingTitle} ({processedProducts.length})
               </h3>
               <button
-                onClick={handleQuickDemoProduct}
-                className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-xl flex items-center gap-1"
+                onClick={handleQuickDemoFoodPack}
+                className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-xl flex items-center gap-1 shadow-sm"
               >
-                <Sparkles className="w-3.5 h-3.5" /> + Add Rich Demo Product
+                <Utensils className="w-3.5 h-3.5" /> + 1-Tap Add Veg / Non-Veg / Diet Dish
               </button>
             </div>
 
@@ -1072,13 +1143,16 @@ export default function SuperAppHome() {
               </div>
             ) : processedProducts.length === 0 ? (
               <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center my-4">
-                <Package className="w-10 h-10 text-indigo-500 mx-auto mb-2" />
-                <h3 className="font-bold text-slate-800">No Matching Products</h3>
+                <Salad className="w-10 h-10 text-emerald-600 mx-auto mb-2" />
+                <h3 className="font-bold text-slate-800">No Matching Items for Current Filter</h3>
+                <p className="text-xs text-slate-500 mt-1 mb-4">
+                  Tap below to seed sample Pure Veg, Non-Veg, Fast Food, or Light Diet dishes into MongoDB!
+                </p>
                 <button
-                  onClick={handleQuickDemoProduct}
-                  className="mt-3 bg-indigo-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl inline-flex items-center gap-1.5"
+                  onClick={handleQuickDemoFoodPack}
+                  className="bg-emerald-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl inline-flex items-center gap-1.5"
                 >
-                  <Sparkles className="w-4 h-4" /> Add Rich Demo Product
+                  <Sparkles className="w-4 h-4" /> Seed Sample Veg / Non-Veg / Diet Dish
                 </button>
               </div>
             ) : (
@@ -1090,6 +1164,8 @@ export default function SuperAppHome() {
                   const retailMrp = product.mrp || Math.round(product.price * 1.18);
                   const discountPct = Math.max(5, Math.round(((retailMrp - displayPrice) / retailMrp) * 100));
                   const isWishlisted = wishlist.some((w) => w._id === product._id);
+                  const pDiet = getProductDiet(product);
+                  const pStyle = getProductFoodStyle(product);
 
                   return (
                     <div
@@ -1107,7 +1183,7 @@ export default function SuperAppHome() {
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
-                                Tap for Product Specs & Slabs
+                                Tap for Specs & Wholesale Slabs
                               </div>
                             )}
                           </div>
@@ -1128,13 +1204,50 @@ export default function SuperAppHome() {
                         </div>
 
                         <div className="p-3.5 pb-0">
-                          <div className="flex items-center justify-between gap-1 mb-1">
-                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">
-                              {product.brand || product.category}
-                            </span>
+                          {/* FSSAI Veg/Non-Veg Symbol + Food Style Pill */}
+                          <div className="flex items-center justify-between gap-1 mb-1.5 flex-wrap">
+                            <div className="flex items-center gap-1.5">
+                              {pDiet === 'VEG' && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-500 text-emerald-800 text-[10px] font-extrabold">
+                                  <span className="w-2.5 h-2.5 border border-emerald-600 flex items-center justify-center">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                                  </span>
+                                  PURE VEG
+                                </span>
+                              )}
+                              {pDiet === 'NON_VEG' && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-50 border border-rose-500 text-rose-800 text-[10px] font-extrabold">
+                                  <span className="w-2.5 h-2.5 border border-rose-600 flex items-center justify-center">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
+                                  </span>
+                                  NON-VEG
+                                </span>
+                              )}
+                              {pStyle === 'FAST_FOOD' && (
+                                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-amber-100 text-amber-900">
+                                  🍔 Fast Food
+                                </span>
+                              )}
+                              {pStyle === 'LIGHT_DIET' && (
+                                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-teal-100 text-teal-900">
+                                  🥗 Light / Diet
+                                </span>
+                              )}
+                              {pStyle === 'MAIN_COURSE' && (
+                                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-indigo-50 text-indigo-800">
+                                  🍛 Meal
+                                </span>
+                              )}
+                              {pDiet === 'NONE' && (
+                                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">
+                                  {product.brand || product.category}
+                                </span>
+                              )}
+                            </div>
+
                             {product.requiresPrescription && (
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-700 flex items-center gap-1">
-                                <ShieldAlert className="w-3 h-3" /> Rx Required
+                                <ShieldAlert className="w-3 h-3" /> Rx
                               </span>
                             )}
                           </div>
@@ -1147,6 +1260,7 @@ export default function SuperAppHome() {
                           </h3>
                           <p className="text-[11px] text-slate-500 mt-0.5 truncate">
                             🏪 {product.shopName || 'A2Z Verified Local Partner'}
+                            {product.calories ? ` • 🔥 ${product.calories}` : ''}
                           </p>
                         </div>
                       </div>
@@ -1160,9 +1274,11 @@ export default function SuperAppHome() {
                             </span>
                           </div>
                           <div className="text-[10px] font-semibold text-emerald-700">
-                            {isWholesale
-                              ? `B2B MOQ: ${product.minWholesaleQty || 5} units`
-                              : `Wholesale from ₹${product.wholesalePrice || Math.round(product.price * 0.85)}`}
+                            {product.category === 'FOOD'
+                              ? `⏱️ ${product.prepTime || '25 mins'} delivery`
+                              : isWholesale
+                                ? `B2B MOQ: ${product.minWholesaleQty || 5} units`
+                                : `Wholesale from ₹${product.wholesalePrice || Math.round(product.price * 0.85)}`}
                           </div>
                         </div>
 
@@ -1187,56 +1303,6 @@ export default function SuperAppHome() {
               </div>
             )}
 
-            {/* Recently Viewed Products */}
-            {recentlyViewed.length > 0 && (
-              <div className="mt-7 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                <h3 className="text-xs sm:text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-indigo-600" /> {t.recentlyViewedTitle}
-                </h3>
-                <div className="flex gap-3 overflow-x-auto pb-1 no-scrollbar">
-                  {recentlyViewed.map((item) => (
-                    <div
-                      key={item._id}
-                      onClick={() => openProductModal(item)}
-                      className="min-w-[150px] max-w-[150px] border border-slate-200 rounded-xl p-2.5 cursor-pointer hover:border-indigo-500 bg-slate-50/60 shrink-0"
-                    >
-                      {item.imageUrl && (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.name}
-                          className="w-full h-20 object-cover rounded-lg mb-1.5"
-                        />
-                      )}
-                      <div className="text-xs font-bold text-slate-900 truncate">{item.name}</div>
-                      <div className="text-xs font-extrabold text-indigo-700 mt-0.5">₹{item.price}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Saved For Later Box */}
-            {savedForLater.length > 0 && (
-              <div className="mt-5 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                <h3 className="text-xs font-extrabold text-slate-800 mb-2 flex items-center gap-1.5">
-                  <Bookmark className="w-4 h-4 text-amber-600" /> Saved For Later ({savedForLater.length})
-                </h3>
-                <div className="space-y-2">
-                  {savedForLater.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-xl">
-                      <span className="font-bold">{item.name} (₹{item.finalPrice})</span>
-                      <button
-                        onClick={() => moveBackToCart(idx)}
-                        className="bg-indigo-600 text-white font-bold px-3 py-1 rounded-lg"
-                      >
-                        Move to Cart
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* ==================== SMART CART & GPS GEOFENCED CHECKOUT ==================== */}
             {cart.length > 0 && (
               <div className="mt-6 bg-white rounded-2xl border-2 border-indigo-600 p-4 shadow-lg">
@@ -1255,75 +1321,17 @@ export default function SuperAppHome() {
                         <div className="text-[11px] text-slate-500">
                           Unit Rate: ₹{item.finalPrice} × {item.qty} = <strong>₹{item.finalPrice * item.qty}</strong>
                         </div>
-                        <button
-                          onClick={() => moveToSavedForLater(idx)}
-                          className="text-[10px] font-bold text-indigo-600 underline mt-0.5"
-                        >
-                          Save for Later
-                        </button>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => updateCartQty(idx, -1)}
-                          className="w-6 h-6 rounded-lg bg-white border font-bold text-slate-700"
-                        >
-                          -
-                        </button>
+                        <button onClick={() => updateCartQty(idx, -1)} className="w-6 h-6 rounded-lg bg-white border font-bold">-</button>
                         <span className="font-extrabold px-1">{item.qty}</span>
-                        <button
-                          onClick={() => updateCartQty(idx, 1)}
-                          className="w-6 h-6 rounded-lg bg-indigo-600 text-white font-bold"
-                        >
-                          +
-                        </button>
+                        <button onClick={() => updateCartQty(idx, 1)} className="w-6 h-6 rounded-lg bg-indigo-600 text-white font-bold">+</button>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                {/* Coupon Bar */}
-                <div className="flex gap-2 mb-3">
-                  <input
-                    type="text"
-                    placeholder="Coupon Code (Try A2ZBULK or HOTFOOD50)"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    className="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-xs uppercase font-mono"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => applyCoupon()}
-                    className="bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl"
-                  >
-                    Apply
-                  </button>
-                </div>
-
-                {needsRx && (
-                  <div className="mb-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs space-y-2">
-                    <p className="font-bold">🩺 Doctor Prescription Required for Medicine *</p>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <label className="cursor-pointer bg-rose-600 text-white font-bold px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 shrink-0">
-                        <Camera className="w-3.5 h-3.5" /> Upload Rx Photo
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => handleFileUpload(e.target.files?.[0], 'PRESCRIPTION')}
-                        />
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Or enter Doctor Rx ID..."
-                        value={prescriptionUrl}
-                        onChange={(e) => setPrescriptionUrl(e.target.value)}
-                        className="w-full border border-rose-300 rounded-lg px-2.5 py-1.5 text-xs bg-white"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* GPS Location Pinning & 20-30km Radius Validation */}
+                {/* GPS Location Pinning */}
                 <div className="mb-3 space-y-1.5">
                   <div className="flex items-center justify-between">
                     <label className="block text-xs font-bold text-slate-700">
@@ -1332,7 +1340,7 @@ export default function SuperAppHome() {
                     <button
                       type="button"
                       onClick={detectGpsRadius}
-                      className="text-[11px] bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-extrabold px-2.5 py-1 rounded-lg flex items-center gap-1"
+                      className="text-[11px] bg-indigo-100 text-indigo-800 font-extrabold px-2.5 py-1 rounded-lg flex items-center gap-1"
                     >
                       <Navigation className="w-3 h-3" />
                       {gpsLoading ? 'Detecting GPS...' : 'Auto-Detect GPS (20–30km)'}
@@ -1345,50 +1353,6 @@ export default function SuperAppHome() {
                     onChange={(e) => setDeliveryAddress(e.target.value)}
                     className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs"
                   />
-                  {gpsInfo && (
-                    <div
-                      className={`text-[11px] font-bold px-2.5 py-1.5 rounded-lg ${
-                        gpsInfo.withinZone ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'
-                      }`}
-                    >
-                      📡 Distance from {HUB_COORDS.name}: <strong>{gpsInfo.distKm} km</strong> ({gpsInfo.coordsText})
-                    </div>
-                  )}
-                </div>
-
-                {/* Bill Breakdown */}
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1 mb-3">
-                  <div className="flex justify-between"><span>Items Subtotal (Incl. GST):</span><span>₹{cartSubtotal}</span></div>
-                  <div className="flex justify-between"><span>Delivery Fee (Free above ₹999):</span><span>{deliveryFee === 0 ? 'FREE' : `₹${deliveryFee}`}</span></div>
-                  {discountAmount > 0 && (
-                    <div className="flex justify-between text-emerald-700 font-bold">
-                      <span>Coupon Discount:</span><span>-₹{discountAmount}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between font-extrabold text-sm pt-1 border-t">
-                    <span>Grand Total:</span><span>₹{finalPayableTotal}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('RAZORPAY')}
-                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 ${
-                      paymentMethod === 'RAZORPAY' ? 'bg-indigo-50 border-indigo-600 text-indigo-900' : 'bg-white'
-                    }`}
-                  >
-                    <CreditCard className="w-4 h-4 text-indigo-600" /> Razorpay (UPI/Card)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('COD')}
-                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 ${
-                      paymentMethod === 'COD' ? 'bg-emerald-50 border-emerald-600 text-emerald-900' : 'bg-white'
-                    }`}
-                  >
-                    <Banknote className="w-4 h-4 text-emerald-600" /> Cash on Delivery
-                  </button>
                 </div>
 
                 <button
@@ -1410,9 +1374,7 @@ export default function SuperAppHome() {
               <Heart className="w-5 h-5 text-rose-600" /> Saved Wishlist ({wishlist.length})
             </h2>
             {wishlist.length === 0 ? (
-              <p className="text-xs text-slate-500 py-8 text-center">
-                Tap the heart icon on any product to save it to your wishlist.
-              </p>
+              <p className="text-xs text-slate-500 py-8 text-center">No items in wishlist yet.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {wishlist.map((item) => (
@@ -1421,20 +1383,9 @@ export default function SuperAppHome() {
                       <div className="font-bold text-sm">{item.name}</div>
                       <div className="text-xs font-extrabold text-indigo-700">₹{item.price}</div>
                     </div>
-                    <div className="flex gap-1.5">
-                      <button
-                        onClick={() => addToCart(item)}
-                        className="bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg"
-                      >
-                        + Cart
-                      </button>
-                      <button
-                        onClick={() => toggleWishlist(item)}
-                        className="bg-rose-50 text-rose-600 text-xs font-bold px-2.5 py-1.5 rounded-lg"
-                      >
-                        Remove
-                      </button>
-                    </div>
+                    <button onClick={() => addToCart(item)} className="bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg">
+                      + Add to Cart
+                    </button>
                   </div>
                 ))}
               </div>
@@ -1442,248 +1393,139 @@ export default function SuperAppHome() {
           </div>
         )}
 
-        {/* ==================== 3. ORDERS, CANCELLATION, RETURNS & GST INVOICE VIEW ==================== */}
+        {/* ==================== 3. ORDERS & GST INVOICE VIEW ==================== */}
         {viewMode === 'ORDERS' && (
           <div className="space-y-3">
             <div className="bg-white rounded-2xl p-4 border flex items-center justify-between">
               <h2 className="text-base font-extrabold flex items-center gap-1.5">
-                <ClipboardList className="w-5 h-5 text-indigo-600" /> Order Management & Tracking ({orders.length})
+                <ClipboardList className="w-5 h-5 text-indigo-600" /> Order Management ({orders.length})
               </h2>
               <button onClick={fetchOrders} className="bg-slate-100 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1">
                 <RefreshCw className="w-3.5 h-3.5" /> Refresh
               </button>
             </div>
-
-            {orders.length === 0 ? (
-              <div className="bg-white rounded-2xl border p-8 text-center text-sm text-slate-500">
-                No orders placed yet.
-              </div>
-            ) : (
-              orders.map((order) => (
-                <div key={order._id} className="bg-white rounded-2xl p-4 border shadow-sm space-y-3">
-                  <div className="flex justify-between border-b pb-2.5">
-                    <div>
-                      <span
-                        className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded ${
-                          order.status === 'CANCELLED' || order.status === 'RETURN_REQUESTED'
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-indigo-100 text-indigo-800'
-                        }`}
-                      >
-                        {order.status || 'PENDING'}
-                      </span>
-                      <h3 className="font-bold text-sm mt-1">
-                        Customer: {order.customer?.name || 'Verified Buyer'}
-                      </h3>
-                      <p className="text-xs text-slate-500">{order.deliveryAddress}</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-base font-extrabold text-indigo-700">₹{order.totalAmount}</div>
-                      <div className="text-[10px] text-slate-400">#{order._id?.slice(-6)}</div>
-                    </div>
-                  </div>
-
-                  {/* Customer Self-Service Actions: Repeat Order, GST Invoice, Cancel, Return */}
-                  <div className="flex flex-wrap gap-2 pt-1 border-b pb-3">
-                    <button
-                      onClick={() => setInvoiceOrder(order)}
-                      className="bg-indigo-50 hover:bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1"
-                    >
-                      <FileText className="w-3.5 h-3.5" /> Download GST Invoice
-                    </button>
-                    <button
-                      onClick={() => handleRepeatOrder(order)}
-                      className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" /> 1-Click Repeat Order
-                    </button>
-                    {order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && (
-                      <button
-                        onClick={() => handleUpdateOrderStatus(order._id, 'CANCELLED')}
-                        className="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1"
-                      >
-                        <Ban className="w-3.5 h-3.5" /> Cancel Order
-                      </button>
-                    )}
-                    {order.status === 'DELIVERED' && (
-                      <button
-                        onClick={() => handleUpdateOrderStatus(order._id, 'RETURN_REQUESTED')}
-                        className="bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" /> Request Return / Refund
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Delivery Partner / Admin Status Controls */}
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-[11px] text-slate-500 font-semibold">
-                      Fleet Dispatch Status Controls:
+            {orders.map((order) => (
+              <div key={order._id} className="bg-white rounded-2xl p-4 border shadow-sm space-y-3">
+                <div className="flex justify-between border-b pb-2.5">
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">
+                      {order.status || 'PENDING'}
                     </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {['CONFIRMED', 'OUT_FOR_DELIVERY', 'DELIVERED'].map((st) => (
-                        <button
-                          key={st}
-                          onClick={() => handleUpdateOrderStatus(order._id, st)}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${
-                            order.status === st ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'
-                          }`}
-                        >
-                          {st.replace(/_/g, ' ')}
-                        </button>
-                      ))}
-                    </div>
+                    <h3 className="font-bold text-sm mt-1">{order.customer?.name || 'Verified Buyer'}</h3>
+                    <p className="text-xs text-slate-500">{order.deliveryAddress}</p>
                   </div>
+                  <div className="text-base font-extrabold text-indigo-700">₹{order.totalAmount}</div>
                 </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* ==================== 4. PRINTABLE GST TAX INVOICE MODAL ==================== */}
-        {invoiceOrder && (
-          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl space-y-4">
-              <div className="flex justify-between items-start border-b pb-3">
-                <div>
-                  <div className="text-xs font-extrabold uppercase text-indigo-700">TAX INVOICE (GST COMPLIANT)</div>
-                  <h3 className="text-lg font-extrabold text-slate-900">A2Z Wholesale & Retail Super App</h3>
-                  <p className="text-[11px] text-slate-500">
-                    Karimpur Central Hub, Nadia, West Bengal • GSTIN: 19AABCA2Z001Z5
-                  </p>
-                </div>
-                <button onClick={() => setInvoiceOrder(null)} className="p-1.5 bg-slate-100 rounded-full print:hidden">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-xl">
-                <div>
-                  <div className="text-slate-500">Billed To:</div>
-                  <div className="font-bold">{invoiceOrder.customer?.name || currentUser?.name || 'Customer'}</div>
-                  {currentUser?.gstNumber && (
-                    <div className="text-[11px] font-semibold text-indigo-700">Buyer GSTIN: {currentUser.gstNumber}</div>
-                  )}
-                </div>
-                <div className="text-right">
-                  <div className="text-slate-500">Invoice No:</div>
-                  <div className="font-mono font-bold">INV-{invoiceOrder._id?.slice(-6).toUpperCase()}</div>
-                  <div className="text-[11px] text-slate-500">Status: {invoiceOrder.status}</div>
-                </div>
-              </div>
-
-              <div className="border rounded-xl overflow-hidden text-xs">
-                <div className="bg-slate-100 px-3 py-2 font-bold flex justify-between">
-                  <span>Item Description × Qty</span>
-                  <span>Amount</span>
-                </div>
-                <div className="divide-y p-3 space-y-1.5">
-                  {(invoiceOrder.items || []).map((item, idx) => (
-                    <div key={idx} className="flex justify-between pt-1">
-                      <span>{item.product?.name || 'Catalogue Item'} × {item.quantity || 1}</span>
-                      <span className="font-semibold">₹{(item.price || 100) * (item.quantity || 1)}</span>
-                    </div>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => setInvoiceOrder(order)} className="bg-indigo-50 text-indigo-800 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1">
+                    <FileText className="w-3.5 h-3.5" /> GST Invoice
+                  </button>
+                  <button onClick={() => handleRepeatOrder(order)} className="bg-emerald-50 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1">
+                    <RotateCcw className="w-3.5 h-3.5" /> Repeat Order
+                  </button>
+                  {['CONFIRMED', 'OUT_FOR_DELIVERY', 'DELIVERED'].map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => handleUpdateOrderStatus(order._id, st)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${
+                        order.status === st ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      {st.replace(/_/g, ' ')}
+                    </button>
                   ))}
                 </div>
               </div>
-
-              {/* CGST + SGST Breakdown */}
-              <div className="bg-indigo-50/60 p-3 rounded-xl text-xs space-y-1">
-                <div className="flex justify-between">
-                  <span>Taxable Value:</span>
-                  <span>₹{Math.round(invoiceOrder.totalAmount * 0.88)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>CGST (6%):</span>
-                  <span>₹{Math.round(invoiceOrder.totalAmount * 0.06)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>SGST (6%):</span>
-                  <span>₹{Math.round(invoiceOrder.totalAmount * 0.06)}</span>
-                </div>
-                <div className="flex justify-between font-extrabold text-sm border-t border-indigo-200 pt-1">
-                  <span>Total Invoice Value:</span>
-                  <span>₹{invoiceOrder.totalAmount}</span>
-                </div>
-              </div>
-
-              <div className="flex gap-2 print:hidden">
-                <button
-                  onClick={() => window.print()}
-                  className="flex-1 bg-indigo-600 text-white font-bold py-2.5 rounded-xl text-xs"
-                >
-                  🖨️ Print / Save PDF Invoice
-                </button>
-                <button
-                  onClick={() => setInvoiceOrder(null)}
-                  className="bg-slate-200 text-slate-800 font-bold px-4 py-2.5 rounded-xl text-xs"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
         )}
 
-        {/* ==================== 5. ADMIN ANALYTICS & PRODUCT DASHBOARD ==================== */}
+        {/* ==================== 4. ADMIN ANALYTICS & FOOD ITEM CREATOR ==================== */}
         {viewMode === 'ADMIN' && (
           <div className="space-y-4">
-            {/* Executive Analytics Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div className="bg-white p-3.5 rounded-2xl border shadow-sm">
                 <div className="text-[11px] font-bold text-slate-500">Total Revenue</div>
-                <div className="text-lg font-extrabold text-indigo-700 mt-0.5">₹{totalRevenue}</div>
+                <div className="text-lg font-extrabold text-indigo-700">₹{totalRevenue}</div>
               </div>
               <div className="bg-white p-3.5 rounded-2xl border shadow-sm">
                 <div className="text-[11px] font-bold text-slate-500">Total Orders</div>
-                <div className="text-lg font-extrabold text-slate-900 mt-0.5">{orders.length}</div>
+                <div className="text-lg font-extrabold text-slate-900">{orders.length}</div>
               </div>
               <div className="bg-white p-3.5 rounded-2xl border shadow-sm">
-                <div className="text-[11px] font-bold text-slate-500">Live Products</div>
-                <div className="text-lg font-extrabold text-emerald-700 mt-0.5">{products.length}</div>
-              </div>
-              <div className="bg-white p-3.5 rounded-2xl border shadow-sm">
-                <div className="text-[11px] font-bold text-slate-500">Low-Stock Alerts</div>
-                <div className="text-lg font-extrabold text-rose-600 mt-0.5">{lowStockProducts.length}</div>
+                <div className="text-[11px] font-bold text-slate-500">Catalogue Size</div>
+                <div className="text-lg font-extrabold text-emerald-700">{products.length}</div>
               </div>
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border p-5 space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-lg font-bold flex items-center gap-1.5">
-                  <BarChart3 className="w-5 h-5 text-indigo-600" /> Seller & Catalogue Management
+                  <BarChart3 className="w-5 h-5 text-indigo-600" /> Add Product or Restaurant Dish
                 </h2>
                 <button
                   type="button"
-                  onClick={handleQuickDemoProduct}
-                  className="text-xs bg-purple-100 text-purple-800 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1"
+                  onClick={handleQuickDemoFoodPack}
+                  className="text-xs bg-emerald-100 text-emerald-900 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1"
                 >
-                  <Sparkles className="w-3.5 h-3.5" /> + 1-Tap Rich Sample
+                  <Sparkles className="w-3.5 h-3.5" /> + 1-Tap Seed Veg/Non-Veg/Diet Dish
                 </button>
               </div>
 
               <form onSubmit={handleAddProduct} className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <input type="text" required placeholder="Product Name *" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
-                  <input type="text" placeholder="Brand Name (e.g., ITC, Tata, GSK)" value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
+                  <input type="text" required placeholder="Product or Dish Name *" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
+                  <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm bg-white font-bold">
+                    <option value="FOOD">🍛 FOOD (Restaurant / Cloud Kitchen)</option>
+                    <option value="GENERAL">🛒 GENERAL (Grocery & Kirana)</option>
+                    <option value="MEDICINE">💊 MEDICINE (Pharmacy)</option>
+                    <option value="ELECTRONICS">⚡ ELECTRONICS</option>
+                  </select>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm bg-white">
-                    <option value="GENERAL">GENERAL (Grocery)</option>
-                    <option value="FOOD">FOOD (Restaurant)</option>
-                    <option value="MEDICINE">MEDICINE (Pharmacy)</option>
-                    <option value="ELECTRONICS">ELECTRONICS</option>
-                  </select>
-                  <input type="text" placeholder="Variants (comma separated: 500g, 1kg, 5kg)" value={formData.variantsText} onChange={(e) => setFormData({ ...formData, variantsText: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
-                </div>
+                {/* Conditional Food Dietary & Style Selectors */}
+                {formData.category === 'FOOD' && (
+                  <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <div>
+                      <label className="block text-[11px] font-extrabold text-slate-700 mb-1">Dietary Type *</label>
+                      <select
+                        value={formData.dietaryType}
+                        onChange={(e) => setFormData({ ...formData, dietaryType: e.target.value })}
+                        className="w-full border rounded-xl px-2.5 py-2 text-xs bg-white font-bold"
+                      >
+                        <option value="VEG">🟢 Pure Vegetarian (Veg)</option>
+                        <option value="NON_VEG">🔴 Non-Vegetarian (Non-Veg)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-extrabold text-slate-700 mb-1">Food Style *</label>
+                      <select
+                        value={formData.foodStyle}
+                        onChange={(e) => setFormData({ ...formData, foodStyle: e.target.value })}
+                        className="w-full border rounded-xl px-2.5 py-2 text-xs bg-white font-bold"
+                      >
+                        <option value="FAST_FOOD">🍔 Fast Food / Snacks</option>
+                        <option value="LIGHT_DIET">🥗 Light / Diet / Healthy Food</option>
+                        <option value="MAIN_COURSE">🍛 Heavy Meal / Biryani / Thali</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-extrabold text-slate-700 mb-1">Calories / Prep Time</label>
+                      <input
+                        type="text"
+                        placeholder="e.g., 240 kcal • 15 mins"
+                        value={formData.calories}
+                        onChange={(e) => setFormData({ ...formData, calories: e.target.value })}
+                        className="w-full border rounded-xl px-2.5 py-2 text-xs bg-white"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-2">
                   <input type="number" required placeholder="Retail Price (₹) *" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
-                  <input type="number" placeholder="Wholesale Price (₹)" value={formData.wholesalePrice} onChange={(e) => setFormData({ ...formData, wholesalePrice: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
+                  <input type="number" placeholder="Wholesale / Bulk Price (₹)" value={formData.wholesalePrice} onChange={(e) => setFormData({ ...formData, wholesalePrice: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
                 </div>
-
-                <textarea placeholder="Product Description & Highlights..." value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-xs h-16" />
 
                 <div className="p-3 rounded-xl bg-indigo-50 border flex flex-col sm:flex-row gap-2">
                   <label className="cursor-pointer bg-indigo-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shrink-0">
@@ -1694,117 +1536,57 @@ export default function SuperAppHome() {
                 </div>
 
                 <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl">
-                  Save Product to Database
+                  Save to MongoDB
                 </button>
               </form>
             </div>
           </div>
         )}
 
-        {/* ==================== 6. PRODUCT DETAIL DRAWER ==================== */}
+        {/* ==================== 5. PRODUCT DETAIL MODAL ==================== */}
         {selectedProduct && (
           <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
-            <div className="bg-white w-full max-w-2xl rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto p-5 shadow-2xl space-y-4">
-              <div className="flex items-start justify-between border-b pb-3">
+            <div className="bg-white w-full max-w-xl rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4">
+              <div className="flex justify-between items-start border-b pb-3">
                 <div>
-                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">
-                    {selectedProduct.brand || selectedProduct.category}
-                  </span>
-                  <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 mt-1">
-                    {selectedProduct.name}
-                  </h2>
+                  <h2 className="text-lg font-extrabold text-slate-900">{selectedProduct.name}</h2>
                   <p className="text-xs text-slate-500">
-                    Sold by: <strong>{selectedProduct.shopName || 'A2Z Central Hub'}</strong> • ★ {selectedProduct.rating || 4.7}
+                    {selectedProduct.shopName} {selectedProduct.calories ? `• 🔥 ${selectedProduct.calories}` : ''}
                   </p>
                 </div>
-                <button onClick={() => setSelectedProduct(null)} className="p-2 rounded-full bg-slate-100">
+                <button onClick={() => setSelectedProduct(null)} className="p-1.5 bg-slate-100 rounded-full">
                   <X className="w-5 h-5" />
                 </button>
               </div>
-
               {selectedProduct.imageUrl && (
-                <div onClick={() => setZoomImg(!zoomImg)} className="w-full bg-slate-100 rounded-2xl overflow-hidden cursor-zoom-in relative">
-                  <img
-                    src={selectedProduct.imageUrl}
-                    alt={selectedProduct.name}
-                    className={`w-full object-cover transition-transform duration-300 ${zoomImg ? 'scale-150 h-80' : 'h-56'}`}
-                  />
-                  <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded">
-                    {zoomImg ? 'Tap to Reset Zoom' : '🔍 Tap Image to Zoom'}
-                  </span>
-                </div>
+                <img src={selectedProduct.imageUrl} alt={selectedProduct.name} className="w-full h-52 object-cover rounded-2xl" />
               )}
+              <p className="text-xs text-slate-600">{selectedProduct.description}</p>
+              <button
+                onClick={() => addToCart(selectedProduct, detailQty, selectedVariant)}
+                className="w-full bg-indigo-600 text-white font-extrabold py-3 rounded-xl text-sm"
+              >
+                Add to Cart — ₹{calculateUnitPrice(selectedProduct, detailQty) * detailQty}
+              </button>
+            </div>
+          </div>
+        )}
 
-              <div>
-                <label className="block text-xs font-extrabold text-slate-700 mb-1.5">Select Pack / Variant:</label>
-                <div className="flex flex-wrap gap-2">
-                  {(Array.isArray(selectedProduct.variants) && selectedProduct.variants.length > 0
-                    ? selectedProduct.variants
-                    : ['Standard Pack', 'Family / Bulk Pack']
-                  ).map((v) => (
-                    <button
-                      key={v}
-                      onClick={() => setSelectedVariant(v)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border ${
-                        selectedVariant === v ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      {v}
-                    </button>
-                  ))}
-                </div>
+        {/* ==================== 6. PRINTABLE GST INVOICE MODAL ==================== */}
+        {invoiceOrder && (
+          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-md rounded-2xl p-5 space-y-3">
+              <div className="flex justify-between border-b pb-2">
+                <div className="font-extrabold text-sm">GST TAX INVOICE #{invoiceOrder._id?.slice(-6)}</div>
+                <button onClick={() => setInvoiceOrder(null)}><X className="w-4 h-4" /></button>
               </div>
-
-              {/* Wholesale Price Slabs */}
-              <div className="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-3.5">
-                <div className="text-xs font-extrabold text-indigo-950 mb-2">
-                  📦 Tiered Wholesale & Bulk Price Slabs:
-                </div>
-                <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                  <div className={`p-2 rounded-xl border ${detailQty < 5 ? 'bg-white border-indigo-600 font-bold' : 'bg-white/60'}`}>
-                    <div className="text-[10px] text-slate-500">1–4 Units</div>
-                    <div className="text-indigo-800 font-extrabold">₹{selectedProduct.price}</div>
-                  </div>
-                  <div className={`p-2 rounded-xl border ${detailQty >= 5 && detailQty < 20 ? 'bg-white border-indigo-600 font-bold' : 'bg-white/60'}`}>
-                    <div className="text-[10px] text-slate-500">5–19 Units</div>
-                    <div className="text-emerald-700 font-extrabold">
-                      ₹{selectedProduct.wholesalePrice || Math.round(selectedProduct.price * 0.85)}
-                    </div>
-                  </div>
-                  <div className={`p-2 rounded-xl border ${detailQty >= 20 && detailQty < 50 ? 'bg-white border-indigo-600 font-bold' : 'bg-white/60'}`}>
-                    <div className="text-[10px] text-slate-500">20–49 Units</div>
-                    <div className="text-emerald-700 font-extrabold">
-                      ₹{Math.round((selectedProduct.wholesalePrice || selectedProduct.price * 0.85) * 0.94)}
-                    </div>
-                  </div>
-                  <div className={`p-2 rounded-xl border ${detailQty >= 50 ? 'bg-white border-indigo-600 font-bold' : 'bg-white/60'}`}>
-                    <div className="text-[10px] text-slate-500">50+ Bulk</div>
-                    <div className="text-emerald-700 font-extrabold">
-                      ₹{Math.round((selectedProduct.wholesalePrice || selectedProduct.price * 0.85) * 0.88)}
-                    </div>
-                  </div>
-                </div>
+              <div className="text-xs space-y-1">
+                <div>Customer: <strong>{invoiceOrder.customer?.name || 'Verified Buyer'}</strong></div>
+                <div>Total Inclusive of CGST/SGST: <strong>₹{invoiceOrder.totalAmount}</strong></div>
               </div>
-
-              <div className="flex items-center justify-between bg-slate-100 p-3 rounded-2xl">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-700">Quantity:</span>
-                  <button onClick={() => setDetailQty(Math.max(1, detailQty - 1))} className="w-8 h-8 rounded-xl bg-white font-extrabold border">-</button>
-                  <input
-                    type="number"
-                    value={detailQty}
-                    onChange={(e) => setDetailQty(Math.max(1, Number(e.target.value)))}
-                    className="w-14 text-center font-extrabold text-sm bg-white border rounded-xl py-1"
-                  />
-                  <button onClick={() => setDetailQty(detailQty + 1)} className="w-8 h-8 rounded-xl bg-white font-extrabold border">+</button>
-                </div>
-                <button
-                  onClick={() => addToCart(selectedProduct, detailQty, selectedVariant)}
-                  className="bg-indigo-600 text-white font-extrabold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow"
-                >
-                  Add for ₹{calculateUnitPrice(selectedProduct, detailQty) * detailQty}
-                </button>
-              </div>
+              <button onClick={() => window.print()} className="w-full bg-indigo-600 text-white font-bold py-2 rounded-xl text-xs">
+                🖨️ Print / Save PDF
+              </button>
             </div>
           </div>
         )}
@@ -1812,60 +1594,20 @@ export default function SuperAppHome() {
         {/* ==================== 7. ACCOUNT VIEW ==================== */}
         {viewMode === 'ACCOUNT' && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-            {currentUser ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b pb-3">
-                  <div>
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                      {currentUser.role}
-                    </span>
-                    <h2 className="text-lg font-extrabold text-slate-900 mt-1">{currentUser.name}</h2>
-                    <p className="text-xs text-slate-500">{currentUser.email} • 📞 {currentUser.phone}</p>
-                  </div>
-                  <button
-                    onClick={() => { localStorage.removeItem('a2z_user'); setCurrentUser(null); }}
-                    className="bg-rose-100 text-rose-700 font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-1"
-                  >
-                    <LogOut className="w-4 h-4" /> Logout
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <button onClick={() => setViewMode('STORE')} className="bg-indigo-600 text-white font-bold text-xs py-3 rounded-xl">
-                    Go to Storefront
-                  </button>
-                  <button onClick={() => { fetchOrders(); setViewMode('ORDERS'); }} className="bg-slate-800 text-white font-bold text-xs py-3 rounded-xl">
-                    View Live Orders
-                  </button>
-                </div>
+            <div className="mb-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              <p className="text-xs font-extrabold text-slate-700 mb-2">1-Tap Instant Demo Login:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button onClick={() => handleQuickDemoAuth('CUSTOMER')} className="bg-white border p-2.5 rounded-xl text-xs font-bold">
+                  🛍️ Retail Customer
+                </button>
+                <button onClick={() => handleQuickDemoAuth('WHOLESALE_BUYER')} className="bg-white border p-2.5 rounded-xl text-xs font-bold text-emerald-800">
+                  📦 Wholesale Buyer
+                </button>
+                <button onClick={() => handleQuickDemoAuth('DELIVERY_PARTNER')} className="bg-white border p-2.5 rounded-xl text-xs font-bold text-amber-800">
+                  🛵 Delivery Rider
+                </button>
               </div>
-            ) : (
-              <div>
-                <div className="mb-6 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                  <p className="text-xs font-extrabold text-slate-700 mb-2 flex items-center gap-1">
-                    <Sparkles className="w-4 h-4 text-indigo-600" /> 1-Tap Instant Demo Login:
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <button onClick={() => handleQuickDemoAuth('CUSTOMER')} className="bg-white border p-2.5 rounded-xl text-xs text-left font-bold">
-                      🛍️ Retail Customer
-                    </button>
-                    <button onClick={() => handleQuickDemoAuth('WHOLESALE_BUYER')} className="bg-white border p-2.5 rounded-xl text-xs text-left font-bold text-emerald-800">
-                      📦 Wholesale Buyer (B2B)
-                    </button>
-                    <button onClick={() => handleQuickDemoAuth('DELIVERY_PARTNER')} className="bg-white border p-2.5 rounded-xl text-xs text-left font-bold text-amber-800">
-                      🛵 Delivery Rider
-                    </button>
-                  </div>
-                </div>
-
-                <form onSubmit={handleAuthSubmit} className="space-y-3">
-                  <input type="email" required placeholder="Email Address" value={authForm.email} onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
-                  <input type="password" required placeholder="Password" value={authForm.password} onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })} className="w-full border rounded-xl px-3 py-2 text-sm" />
-                  <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-sm">
-                    Login / Continue
-                  </button>
-                </form>
-              </div>
-            )}
+            </div>
           </div>
         )}
       </main>
